@@ -17,4 +17,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(404).body(errorResponse);
     }
 
+    // InsufficientStockException handler
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<HashMap<String, String>> handleInsufficientStockException(InsufficientStockException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return ResponseEntity.status(400).body(errorResponse);
+    }
+
 }
