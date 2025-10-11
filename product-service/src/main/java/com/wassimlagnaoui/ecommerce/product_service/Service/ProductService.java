@@ -5,6 +5,7 @@ import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.InventoryTransaction;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.TransactionType;
+import com.wassimlagnaoui.ecommerce.product_service.Exception.InsufficientStockException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.InventoryTransactionRepository;
@@ -115,14 +116,33 @@ public class ProductService {
 
     }
 
+    public TransactionDTO decrementInventory(UpdateProductInventoryDTO updateProductInventoryDTO) {
+        // Fetch the product
+        Product product = productRepository.findById(updateProductInventoryDTO.getProductId())
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + updateProductInventoryDTO.getProductId()));
 
+        // Decrement the stock quantity
+        if (product.getStockQuantity() < updateProductInventoryDTO.getQuantity()) {
+            throw new InsufficientStockException("Insufficient stock for product id: " + updateProductInventoryDTO.getProductId());
+        }
+        product.setStockQuantity(product.getStockQuantity() - updateProductInventoryDTO.getQuantity());
+        Product savedProduct = productRepository.save(product);
 
+        // Create an inventory transaction
+        InventoryTransaction transaction = new InventoryTransaction();
+        transaction.setProduct(savedProduct);
+        transaction.setType(TransactionType.REMOVE.name());
+        transaction.setQuantity(updateProductInventoryDTO.getQuantity());
+        transaction.setTimestamp(java.time.LocalDateTime.now());
+        InventoryTransaction savedTransaction = inventoryTransactionRepository.save(transaction);
 
+        // Return the transaction details
+        return TransactionDTO.builder().transactionId(savedTransaction.getId()).description("Inventory decremented")
+                .productId(savedProduct.getId())
+                .type(TransactionType.REMOVE.name())
+                .build();
 
-
-
-
-
+    }
 
 
     // Get All Categories
