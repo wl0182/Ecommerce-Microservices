@@ -1,7 +1,10 @@
 package com.wassimlagnaoui.ecommerce.product_service.Service;
 
+import com.wassimlagnaoui.ecommerce.product_service.DTO.CategoryDTO;
+import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateCategoryDTO;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateProductDTO;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.ProductDTO;
+import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
@@ -101,6 +104,34 @@ public class ProductService {
         product.setStockQuantity(product.getStockQuantity() - quantity);
         productRepository.save(product);
         return "Inventory decremented successfully";
+    }
+
+    // Get All Categories
+    public List<CategoryDTO> getAllCategories(){
+        List<CategoryDTO> categoryDTOS = new ArrayList<>();
+        categoryRepository.findAll().forEach(category -> {
+            CategoryDTO categoryDTO = CategoryDTO.builder()
+                    .id(category.getId())
+                    .name(category.getName())
+                    .description(category.getDescription())
+                    .build();
+            categoryDTOS.add(categoryDTO);
+        });
+        return categoryDTOS;
+    }
+
+    // CreateCategory
+    public CategoryDTO createCategory(CreateCategoryDTO categoryDTO){
+        Category category = new Category();
+        category.setName(categoryDTO.getName());
+        category.setDescription(categoryDTO.getDescription());
+        Category savedCategory = categoryRepository.save(category);
+        return CategoryDTO.builder()
+                .id(savedCategory.getId())
+                .name(savedCategory.getName())
+                .description(savedCategory.getDescription())
+                .build();
+
     }
 
 

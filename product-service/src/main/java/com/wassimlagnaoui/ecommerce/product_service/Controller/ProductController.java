@@ -1,6 +1,8 @@
 package com.wassimlagnaoui.ecommerce.product_service.Controller;
 
 
+import com.wassimlagnaoui.ecommerce.product_service.DTO.CategoryDTO;
+import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateCategoryDTO;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateProductDTO;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.ProductDTO;
 import com.wassimlagnaoui.ecommerce.product_service.Service.ProductService;
@@ -54,6 +56,24 @@ public class ProductController {
     public ResponseEntity<String> decrementStock(@PathVariable Long productId, @RequestParam Integer quantity) {
         String updatedProduct = productService.decrementInventory(productId, quantity);
         return ResponseEntity.ok(updatedProduct);
+    }
+
+
+
+    // get All Categories
+
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
+        List<CategoryDTO> categories = productService.getAllCategories();
+        return ResponseEntity.ok(categories);
+    }
+
+    // create Category
+    @PostMapping("/categories")
+    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CreateCategoryDTO createCategoryDTO) {
+        CategoryDTO categoryDTO = productService.createCategory(createCategoryDTO);
+        return ResponseEntity.ok(categoryDTO);
     }
 
 
