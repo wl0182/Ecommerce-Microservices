@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: cart-service # Change the application name to order-service
+
+server:
+  port:
+    7003
+
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

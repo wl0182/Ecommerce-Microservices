@@ -1,0 +1,108 @@
+package com.wassimlagnaoui.ecommerce.product_service.Service;
+
+import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateProductDTO;
+import com.wassimlagnaoui.ecommerce.product_service.DTO.ProductDTO;
+import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
+import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundException;
+import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
+import com.wassimlagnaoui.ecommerce.product_service.Repository.InventoryTransactionRepository;
+import com.wassimlagnaoui.ecommerce.product_service.Repository.ProductRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class ProductService {
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
+
+    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, InventoryTransactionRepository inventoryTransactionRepository) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.inventoryTransactionRepository = inventoryTransactionRepository;
+    }
+
+    // get all products
+    public List<ProductDTO> getAllProducts() {
+        List<Product> products = productRepository.findAll();
+        List<ProductDTO> productDTOS = new ArrayList<>();
+        for (Product product : products) {
+            ProductDTO productDTO = ProductDTO.builder().id(product.getId())
+                    .name(product.getName())
+                    .description(product.getDescription())
+                    .price(product.getPrice())
+                    .categoryName(product.getName())
+                    .sku(product.getSku())
+                    .build();
+            productDTOS.add(productDTO);
+        }
+
+        return productDTOS;
+    }
+
+    public ProductDTO getProductById(Long id) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        return ProductDTO.builder().id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .categoryName(product.getName())
+                .sku(product.getSku())
+                .build();
+    }
+
+    // create product
+    public ProductDTO createProduct(CreateProductDTO createProductDTO) {
+        Product product = new Product();
+        product.setName(createProductDTO.getName());
+        product.setDescription(createProductDTO.getDescription());
+        product.setPrice(createProductDTO.getPrice());
+        product.setSku(createProductDTO.getSku());
+        product.setStockQuantity(createProductDTO.getStockQuantity());
+        product.setCategory(categoryRepository.findById(createProductDTO.getCategoryId()).orElse(null));
+        Product savedProduct = productRepository.save(product);
+        return ProductDTO.builder().id(savedProduct.getId())
+                .name(savedProduct.getName())
+                .description(savedProduct.getDescription())
+                .price(savedProduct.getPrice())
+                .categoryName(savedProduct.getCategory() != null ? savedProduct.getCategory().getName() : null)
+                .sku(savedProduct.getSku())
+                .build();
+    }
+
+    public ProductDTO updateProductPrice(Long productId, Double newPrice) {
+        Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
+        product.setPrice(newPrice);
+        Product updatedProduct = productRepository.save(product);
+        return ProductDTO.builder().id(updatedProduct.getId())
+                .name(updatedProduct.getName())
+                .description(updatedProduct.getDescription())
+                .price(updatedProduct.getPrice())
+                .categoryName(updatedProduct.getCategory() != null ? updatedProduct.getCategory().getName() : null)
+                .sku(updatedProduct.getSku())
+                .build();
+    }
+
+    // update inventory decrement and increment methods
+    public String incrementInventory(Long productId, Integer quantity) {
+        Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
+        product.setStockQuantity(product.getStockQuantity() + quantity);
+        productRepository.save(product);
+        return "Inventory incremented successfully";
+    }
+
+    public String decrementInventory(Long productId, Integer quantity) {
+        Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
+        if (product.getStockQuantity() < quantity) {
+            return "Insufficient stock";
+        }
+        product.setStockQuantity(product.getStockQuantity() - quantity);
+        productRepository.save(product);
+        return "Inventory decremented successfully";
+    }
+
+
+
+}
