@@ -48,8 +48,12 @@ public class ProductController {
         return ResponseEntity.ok(updatedProduct);
     }
 
-
-
+    // decrement stock
+    @PostMapping("/{id}/decrement-stock")
+    public ResponseEntity<TransactionDTO> decrementStock(@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
+        TransactionDTO updatedProduct = productService.decrementInventory(updateProductInventoryDTO);
+        return ResponseEntity.ok(updatedProduct);
+    }
 
 
     // get All Categories
