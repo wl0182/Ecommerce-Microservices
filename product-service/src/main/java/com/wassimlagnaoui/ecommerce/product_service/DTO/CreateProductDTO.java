@@ -15,3 +15,5 @@ public class CreateProductDTO {
     private Long categoryId;
     private Integer stockQuantity;
 }
+
+
