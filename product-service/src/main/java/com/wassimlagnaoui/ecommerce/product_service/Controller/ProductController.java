@@ -1,10 +1,7 @@
 package com.wassimlagnaoui.ecommerce.product_service.Controller;
 
 
-import com.wassimlagnaoui.ecommerce.product_service.DTO.CategoryDTO;
-import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateCategoryDTO;
-import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateProductDTO;
-import com.wassimlagnaoui.ecommerce.product_service.DTO.ProductDTO;
+import com.wassimlagnaoui.ecommerce.product_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.product_service.Service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -46,17 +43,12 @@ public class ProductController {
 
     // increment stock
     @PostMapping("/{id}/increment-stock")
-    public ResponseEntity<String> incrementStock(@PathVariable Long productId, @RequestParam Integer quantity) {
-        String updatedProduct = productService.incrementInventory(productId, quantity);
+    public ResponseEntity<TransactionDTO> incrementStock(@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
+        TransactionDTO updatedProduct = productService.incrementInventory(updateProductInventoryDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 
-    // decrement stock
-    @PostMapping("/{id}/decrement-stock")
-    public ResponseEntity<String> decrementStock(@PathVariable Long productId, @RequestParam Integer quantity) {
-        String updatedProduct = productService.decrementInventory(productId, quantity);
-        return ResponseEntity.ok(updatedProduct);
-    }
+
 
 
 
@@ -75,15 +67,6 @@ public class ProductController {
         CategoryDTO categoryDTO = productService.createCategory(createCategoryDTO);
         return ResponseEntity.ok(categoryDTO);
     }
-
-
-
-
-
-
-
-
-
 
 
 

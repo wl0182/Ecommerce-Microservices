@@ -1,16 +1,16 @@
 package com.wassimlagnaoui.ecommerce.product_service.Service;
 
-import com.wassimlagnaoui.ecommerce.product_service.DTO.CategoryDTO;
-import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateCategoryDTO;
-import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateProductDTO;
-import com.wassimlagnaoui.ecommerce.product_service.DTO.ProductDTO;
+import com.wassimlagnaoui.ecommerce.product_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
+import com.wassimlagnaoui.ecommerce.product_service.Domain.InventoryTransaction;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
+import com.wassimlagnaoui.ecommerce.product_service.Domain.TransactionType;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.InventoryTransactionRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,22 +89,41 @@ public class ProductService {
     }
 
     // update inventory decrement and increment methods
-    public String incrementInventory(Long productId, Integer quantity) {
-        Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
-        product.setStockQuantity(product.getStockQuantity() + quantity);
-        productRepository.save(product);
-        return "Inventory incremented successfully";
+    @Transactional
+    public TransactionDTO incrementInventory(UpdateProductInventoryDTO updateProductInventoryDTO) {
+        // Fetch the product
+        Product product = productRepository.findById(updateProductInventoryDTO.getProductId())
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + updateProductInventoryDTO.getProductId()));
+
+        // Increment the stock quantity
+        product.setStockQuantity(product.getStockQuantity() + updateProductInventoryDTO.getQuantity());
+        Product savedProduct = productRepository.save(product);
+
+        // Create an inventory transaction
+        InventoryTransaction transaction = new InventoryTransaction();
+        transaction.setProduct(savedProduct);
+        transaction.setType(TransactionType.ADD.name());
+        transaction.setQuantity(updateProductInventoryDTO.getQuantity());
+        transaction.setTimestamp(java.time.LocalDateTime.now());
+        InventoryTransaction savedTransaction = inventoryTransactionRepository.save(transaction);
+
+        // Return the transaction details
+        return TransactionDTO.builder().transactionId(savedTransaction.getId()).description("Inventory incremented")
+                .productId(savedProduct.getId())
+                .type(TransactionType.ADD.name())
+                .build();
+
     }
 
-    public String decrementInventory(Long productId, Integer quantity) {
-        Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
-        if (product.getStockQuantity() < quantity) {
-            return "Insufficient stock";
-        }
-        product.setStockQuantity(product.getStockQuantity() - quantity);
-        productRepository.save(product);
-        return "Inventory decremented successfully";
-    }
+
+
+
+
+
+
+
+
+
 
     // Get All Categories
     public List<CategoryDTO> getAllCategories(){
