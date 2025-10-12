@@ -3,6 +3,7 @@ package com.wassimlagnaoui.ecommerce.user_service.Controller;
 
 import com.wassimlagnaoui.ecommerce.user_service.DTO.CreateUserDTO;
 import com.wassimlagnaoui.ecommerce.user_service.DTO.RegisterUserDTO;
+import com.wassimlagnaoui.ecommerce.user_service.DTO.UpdateUserDTO;
 import com.wassimlagnaoui.ecommerce.user_service.DTO.UserDetails;
 import com.wassimlagnaoui.ecommerce.user_service.Service.UserService;
 import jakarta.annotation.PostConstruct;
@@ -45,6 +46,19 @@ public class UserController {
         UserDetails registeredUser = userService.registerUser(registerUserDTO);
         return ResponseEntity.ok(registeredUser);
     }
+
+    //update user
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDetails> updateUser(@PathVariable("id") Long id, @RequestBody UpdateUserDTO updateUserDTO) {
+        UserDetails updatedUser = userService.updateUser(id, updateUserDTO);
+        return ResponseEntity.ok(updatedUser);
+
+    }
+
+
+
+
+
 
 
 
