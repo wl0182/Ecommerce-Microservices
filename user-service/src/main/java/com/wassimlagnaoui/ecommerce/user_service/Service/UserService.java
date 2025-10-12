@@ -101,6 +101,34 @@ public class UserService {
     }
 
 
+    public AddressDTO addAddressToUSer(Long userId, AddAddressDTO addAddressDTO){
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+        Address address = new Address();
+
+        address.setStreet(addAddressDTO.getStreet());
+        address.setCity(addAddressDTO.getCity());
+        address.setZip(addAddressDTO.getZip());
+        address.setCountry(addAddressDTO.getCountry());
+
+        // remove default from other addresses if this one is default
+        if(addAddressDTO.isDefault()){
+            user.getAddresses().forEach(addr -> addr.setDefault(false));
+            address.setDefault(addAddressDTO.isDefault());
+        }
+
+        address.setUser(user);
+
+        user.getAddresses().add(address);
+        User updatedUser = userRepository.save(user);
+
+        Address savedAddress = updatedUser.getAddresses().get(updatedUser.getAddresses().size() - 1); // get the last added address
+
+        return new AddressDTO(savedAddress.getId(), savedAddress.getStreet(), savedAddress.getCity(), savedAddress.getZip(), savedAddress.getCountry(), savedAddress.isDefault());
+
+    }
+
+
 
 
 
