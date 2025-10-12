@@ -17,6 +17,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(nativeQuery = true, value = "SELECT * FROM users u WHERE u.name ILIKE %?1%")
     List<User> findByNameContainingIgnoreCase(String name);
 
+    // check if email exists
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.email = ?1")
+    boolean existsByEmail(String email);
+
+
+
+
+
 
 
 }
