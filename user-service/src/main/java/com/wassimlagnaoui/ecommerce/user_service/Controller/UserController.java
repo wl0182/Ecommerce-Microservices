@@ -1,14 +1,14 @@
 package com.wassimlagnaoui.ecommerce.user_service.Controller;
 
 
-import com.wassimlagnaoui.ecommerce.user_service.DTO.CreateUserDTO;
-import com.wassimlagnaoui.ecommerce.user_service.DTO.RegisterUserDTO;
-import com.wassimlagnaoui.ecommerce.user_service.DTO.UpdateUserDTO;
-import com.wassimlagnaoui.ecommerce.user_service.DTO.UserDetails;
+import com.wassimlagnaoui.ecommerce.user_service.DTO.*;
+import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
 import com.wassimlagnaoui.ecommerce.user_service.Service.UserService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -53,6 +53,13 @@ public class UserController {
         UserDetails updatedUser = userService.updateUser(id, updateUserDTO);
         return ResponseEntity.ok(updatedUser);
 
+    }
+
+    // get Addresses by user id
+    @GetMapping("/{id}/addresses")
+    public ResponseEntity<List<AddressDTO>> getUserAddresses(@PathVariable Long id) {
+        List<AddressDTO> addresses = userService.getUserAddresses(id);
+        return ResponseEntity.ok(addresses);
     }
 
 
