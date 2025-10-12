@@ -89,6 +89,22 @@ public class UserService {
     }
 
 
+    // get User Addresses by user id
+    @Transactional(readOnly = true)
+    public List<AddressDTO> getUserAddresses(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+        return user.getAddresses().stream()
+                .map(address -> new AddressDTO(address.getId(), address.getStreet(), address.getCity(), address.getZip(), address.getCountry(), address.isDefault()))
+                .toList();
+
+    }
+
+
+
+
+
+
 
 
 
