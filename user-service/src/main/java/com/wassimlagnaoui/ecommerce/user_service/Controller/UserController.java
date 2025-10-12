@@ -63,6 +63,16 @@ public class UserController {
     }
 
 
+    // add address to user
+    @PostMapping("/{id}/addresses")
+    public ResponseEntity<AddressDTO> addAddressToUser(@PathVariable Long id, @RequestBody AddAddressDTO addAddressDTO) {
+        AddressDTO addressDTO = userService.addAddressToUser(id, addAddressDTO);
+        return ResponseEntity.ok(addressDTO);
+    }
+
+
+
+
 
 
 

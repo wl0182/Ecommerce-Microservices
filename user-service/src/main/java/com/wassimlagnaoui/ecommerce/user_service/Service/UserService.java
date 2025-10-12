@@ -101,7 +101,7 @@ public class UserService {
     }
 
 
-    public AddressDTO addAddressToUSer(Long userId, AddAddressDTO addAddressDTO){
+    public AddressDTO addAddressToUser(Long userId, AddAddressDTO addAddressDTO){
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
         Address address = new Address();
@@ -127,12 +127,6 @@ public class UserService {
         return new AddressDTO(savedAddress.getId(), savedAddress.getStreet(), savedAddress.getCity(), savedAddress.getZip(), savedAddress.getCountry(), savedAddress.isDefault());
 
     }
-
-
-
-
-
-
 
 
 
