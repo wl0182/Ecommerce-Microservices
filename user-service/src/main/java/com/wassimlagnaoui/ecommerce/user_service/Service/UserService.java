@@ -1,9 +1,8 @@
 package com.wassimlagnaoui.ecommerce.user_service.Service;
 
 
-import com.wassimlagnaoui.ecommerce.user_service.DTO.CreateUserDTO;
-import com.wassimlagnaoui.ecommerce.user_service.DTO.RegisterUserDTO;
-import com.wassimlagnaoui.ecommerce.user_service.DTO.UserDetails;
+import com.wassimlagnaoui.ecommerce.user_service.DTO.*;
+import com.wassimlagnaoui.ecommerce.user_service.Exceptions.UserNotFoundException;
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
 import com.wassimlagnaoui.ecommerce.user_service.Model.User;
 import com.wassimlagnaoui.ecommerce.user_service.Repository.UserRepository;
@@ -74,6 +73,22 @@ public class UserService {
         return new UserDetails(savedUser.getId(), savedUser.getEmail(), savedUser.getName(), savedUser.getPhoneNumber());
 
     }
+    // Leaving Login and Authentication to Auth Service for Later
+
+    // update user
+    public UserDetails updateUser(Long id, UpdateUserDTO userDTO){
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+        if(userDTO.getEmail() != null) user.setEmail(userDTO.getEmail());
+        if(userDTO.getName() != null) user.setName(userDTO.getName());
+        if(userDTO.getPhoneNumber() != null) user.setPhoneNumber(userDTO.getPhoneNumber());
+        User updatedUser = userRepository.save(user);
+
+
+        return UserDetails.builder().email(updatedUser.getEmail())
+                .id(updatedUser.getId()).name(updatedUser.getName()).phoneNumber(updatedUser.getPhoneNumber()).build();
+    }
+
+
 
 
 
