@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.user_service.Controller;
 
 
 import com.wassimlagnaoui.ecommerce.user_service.DTO.CreateUserDTO;
+import com.wassimlagnaoui.ecommerce.user_service.DTO.RegisterUserDTO;
 import com.wassimlagnaoui.ecommerce.user_service.DTO.UserDetails;
 import com.wassimlagnaoui.ecommerce.user_service.Service.UserService;
 import jakarta.annotation.PostConstruct;
@@ -31,10 +32,18 @@ public class UserController {
     }
 
     // Create user
-    @PostMapping
+    @PostMapping("/deprecated-create")
     public ResponseEntity<UserDetails> createUser(@RequestBody CreateUserDTO userDetails) {
         UserDetails createdUser = userService.createUser(userDetails);
         return ResponseEntity.ok(createdUser);
+    }
+
+
+    // Register user
+    @PostMapping("/register")
+    public ResponseEntity<UserDetails> registerUser(@RequestBody RegisterUserDTO registerUserDTO) {
+        UserDetails registeredUser = userService.registerUser(registerUserDTO);
+        return ResponseEntity.ok(registeredUser);
     }
 
 
