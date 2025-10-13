@@ -174,5 +174,14 @@ public class ProductService {
     }
 
 
+    public InventoryDTO getInventoryByProductId(Long id) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
 
+        InventoryDTO inventoryDTO = new InventoryDTO();
+        inventoryDTO.setProductId(product.getId());
+        inventoryDTO.setProductName(product.getName());
+        inventoryDTO.setStockInventory(product.getStockQuantity());
+
+        return inventoryDTO;
+    }
 }
