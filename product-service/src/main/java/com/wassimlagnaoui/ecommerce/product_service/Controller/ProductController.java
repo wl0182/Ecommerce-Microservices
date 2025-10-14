@@ -97,6 +97,14 @@ public class ProductController {
     }
 
 
+    // bulk get products by ids
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ProductDTO>> getProductsByIds(@RequestBody List<Long> productIds) {
+        List<ProductDTO> products = productService.getProductsByIds(productIds);
+        return ResponseEntity.ok(products);
+    }
+
+
 
 
 
