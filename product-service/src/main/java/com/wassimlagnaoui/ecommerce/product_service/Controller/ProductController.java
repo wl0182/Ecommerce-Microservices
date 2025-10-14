@@ -85,7 +85,17 @@ public class ProductController {
     @PutMapping("/categories/{id}")
     public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody CreateCategoryDTO createCategoryDTO) {
         CategoryDTO categoryDTO = productService.updateCategory(id, createCategoryDTO);
-        return ResponseEntity.ok(categoryDTO);  }
+        return ResponseEntity.ok(categoryDTO);
+    }
+
+
+    // Kafka test endpoint
+    @PostMapping("/kafka-test")
+    public ResponseEntity<String> sendTestMessageToKafka() {
+        String response = productService.sendTestMessage();
+        return ResponseEntity.ok(response);
+    }
+
 
 
 
