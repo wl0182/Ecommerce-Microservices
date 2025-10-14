@@ -26,7 +26,7 @@ public class ProductService {
 
     // add KafkaTemplate
     @Autowired
-    private  KafkaTemplate<String, String> kafkaTemplate;
+    private  KafkaTemplate<String, Object> kafkaTemplate;
 
 
     public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, InventoryTransactionRepository inventoryTransactionRepository) {
@@ -39,12 +39,19 @@ public class ProductService {
     // kakfka Event test
     public String sendTestMessage() {
 
-        String message  = "Hello, Kafka! This is a test message from ProductService.";
+        ProductDTO productDTO = ProductDTO.builder()
+                .id(1L)
+                .name("Test Product")
+                .description("This is a test product")
+                .price(99.99)
+                .categoryName("Test Category")
+                .sku("TESTSKU123")
+                .build();
 
-        kafkaTemplate.send("product-test-topic", message);
+        kafkaTemplate.send("product-test-topic", productDTO);
 
 
-        return "Message sent to Kafka topic: " + message;
+        return "Message sent to Kafka topic: Product with the ID: " + productDTO.getId().toString();
     }
 
     // get all products
@@ -215,4 +222,23 @@ public class ProductService {
                 .description(savedCategory.getDescription())
                 .build();
     }
+
+    // get bulk product names by ids
+    public List<ProductDTO> getProductsByIds(List<Long> ids) {
+        List<Product> products = productRepository.findAllById(ids);
+        List<ProductDTO> productDTOS = new ArrayList<>();
+        for (Product product : products) {
+            ProductDTO productDTO = ProductDTO.builder().id(product.getId())
+                    .name(product.getName())
+                    .description(product.getDescription())
+                    .price(product.getPrice())
+                    .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
+                    .sku(product.getSku())
+                    .build();
+            productDTOS.add(productDTO);
+        }
+        return productDTOS;
+    }
+
+
 }
