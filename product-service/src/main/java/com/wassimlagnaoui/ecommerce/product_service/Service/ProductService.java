@@ -184,4 +184,16 @@ public class ProductService {
 
         return inventoryDTO;
     }
+
+    public CategoryDTO updateCategory(Long id, CreateCategoryDTO createCategoryDTO) {
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+        category.setName(createCategoryDTO.getName());
+        category.setDescription(createCategoryDTO.getDescription());
+        Category savedCategory = categoryRepository.save(category);
+        return CategoryDTO.builder()
+                .id(savedCategory.getId())
+                .name(savedCategory.getName())
+                .description(savedCategory.getDescription())
+                .build();
+    }
 }
