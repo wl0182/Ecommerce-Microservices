@@ -10,6 +10,8 @@ import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundExc
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.InventoryTransactionRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,10 +24,27 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
 
+    // add KafkaTemplate
+    @Autowired
+    private  KafkaTemplate<String, String> kafkaTemplate;
+
+
     public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, InventoryTransactionRepository inventoryTransactionRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
+    }
+
+
+    // kakfka Event test
+    public String sendTestMessage() {
+
+        String message  = "Hello, Kafka! This is a test message from ProductService.";
+
+        kafkaTemplate.send("product-test-topic", message);
+
+
+        return "Message sent to Kafka topic: " + message;
     }
 
     // get all products
