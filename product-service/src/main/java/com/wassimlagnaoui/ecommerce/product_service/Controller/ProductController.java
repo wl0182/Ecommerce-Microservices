@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController("/products")
+@RestController
+@RequestMapping("/products")
 public class ProductController {
 
     @Autowired
@@ -79,6 +80,12 @@ public class ProductController {
         return ResponseEntity.ok(inventoryDTO);
 
     }
+
+    // update Category
+    @PutMapping("/categories/{id}")
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody CreateCategoryDTO createCategoryDTO) {
+        CategoryDTO categoryDTO = productService.updateCategory(id, createCategoryDTO);
+        return ResponseEntity.ok(categoryDTO);  }
 
 
 
