@@ -1,18 +1,16 @@
 package com.wassimlagnaoui.ecommerce.Cart_Service.Service;
 
-import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.CartDTO;
-import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.CartItemDTO;
-import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.ProductDTO;
+import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.*;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.Cart;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.CartItem;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.CartNotFoundException;
+import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartItemRepository;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -82,6 +80,11 @@ public class CartService {
         ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity("http://PRODUCT-SERVICE/products/bulk", productIds, ProductDTO[].class);
         return List.of(response.getBody());
     }
+    // get Product by ID
+    public ProductDTO getProductById(Long productId) {
+        ResponseEntity<ProductDTO> response = restTemplate.getForEntity("http://PRODUCT-SERVICE/products/" + productId, ProductDTO.class);
+        return response.getBody();
+    }
 
     // Transform ProductDTO list to Map<Long, ProductDTO>
     private HashMap<Long,ProductDTO> mapProductsById(List<ProductDTO> products) {
@@ -91,5 +94,77 @@ public class CartService {
         }
         return productMap;
     }
+
+
+    // Add Item to Cart
+    @Transactional
+    public CartItemDTO addItemToCart(AddItemRequest addItemRequest){
+        Long userId = addItemRequest.getUserId();
+        Long productId = addItemRequest.getProductId();
+        Integer quantity = addItemRequest.getQuantity();
+
+        // Check if product exists in Product Service
+        ProductDTO product;
+        try {
+            product = getProductById(productId);
+        } catch (Exception e) {
+            throw new ProductNotFoundException("Product not found with ID: " + productId);
+        }
+
+        // check if cart exists for user
+        Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
+            Cart newCart = new Cart();
+            newCart.setUserId(userId);
+            return cartRepository.save(newCart);
+        });
+        // check if product already exists in cart
+        Optional<CartItem> existingCartItemOpt = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId);
+        if (existingCartItemOpt.isPresent()) {
+            CartItem existingCartItem = existingCartItemOpt.get();
+            existingCartItem.setQuantity(existingCartItem.getQuantity() + quantity);
+            CartItem updatedCartItem = cartItemRepository.save(existingCartItem);
+            return mapToCartItemDTO(updatedCartItem, product);
+        } else {
+            CartItem newCartItem = new CartItem();
+            newCartItem.setCart(cart);
+            newCartItem.setProductId(productId);
+            newCartItem.setQuantity(quantity);
+            newCartItem.setPrice(product.getPrice());
+            CartItem savedCartItem = cartItemRepository.save(newCartItem);
+            return mapToCartItemDTO(savedCartItem, product);    }
+
+
+    }
+
+    private CartItemDTO mapToCartItemDTO(CartItem cartItem, ProductDTO product) {
+        CartItemDTO cartItemDTO = new CartItemDTO();
+        cartItemDTO.setProductId(product.getId());
+        cartItemDTO.setProductName(product.getName());
+        cartItemDTO.setQuantity(cartItem.getQuantity());
+        cartItemDTO.setPrice(product.getPrice());
+        cartItemDTO.setCartId(cartItem.getCart().getId());
+        cartItemDTO.setId(cartItem.getId());
+        return cartItemDTO;
+    }
+
+    // remove item from cart
+    public ResponseMessage removeItemFromCart(Long userId, Long productId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
+        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found in cart with ID: " + productId));
+        cartItemRepository.delete(cartItem);
+        return new ResponseMessage("Product with ID: " + productId + " removed from cart.");
+    }
+
+    // clear cart
+    public ResponseMessage clearCart(Long userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
+        cartItemRepository.deleteByCartId(cart.getId());
+        cartRepository.delete(cart);
+        return new ResponseMessage("Cart cleared for user ID: " + userId);
+    }
+
 
 }
