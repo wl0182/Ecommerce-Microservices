@@ -17,4 +17,16 @@ public class GlobalExceptionHandler {
         errorResponse.put("suggestion", "Please check the user ID and try again.");
         return errorResponse;
     }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public HashMap<String,String> handleProductNotFoundException(ProductNotFoundException ex) {
+        HashMap<String,String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", "404");
+        errorResponse.put("message", "Product not found from Product Service");
+        errorResponse.put("suggestion", "Please check the product IDs in the cart and try again.");
+        return errorResponse;
+    }
+
+
 }
