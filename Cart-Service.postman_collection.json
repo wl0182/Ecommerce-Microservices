@@ -1,0 +1,69 @@
+{
+  "info": {
+    "name": "Cart Service API",
+    "description": "Postman collection for CartController endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Add Item to Cart",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "http://localhost:7003/cart/1/items",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7003",
+          "path": ["cart", "1", "items"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 1,\n  \"productId\": 101,\n  \"quantity\": 2\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Cart by User ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:7003/cart/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7003",
+          "path": ["cart", "1"]
+        }
+      }
+    },
+    {
+      "name": "Remove Item from Cart",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "http://localhost:7003/cart/1/items/101",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7003",
+          "path": ["cart", "1", "items", "101"]
+        }
+      }
+    },
+    {
+      "name": "Clear Cart",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "http://localhost:7003/cart/1/items",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7003",
+          "path": ["cart", "1", "items"]
+        }
+      }
+    }
+  ]
+}
+
