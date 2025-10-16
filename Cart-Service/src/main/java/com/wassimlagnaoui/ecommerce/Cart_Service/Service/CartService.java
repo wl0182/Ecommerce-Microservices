@@ -32,6 +32,7 @@ public class CartService {
     }
 
     // Get cart by user ID
+    @Transactional(readOnly = true)
     public CartDTO getCartByUserId(Long userId) {
         CartDTO cartResponse = new CartDTO();
         Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
@@ -58,6 +59,8 @@ public class CartService {
             ProductDTO product = productMap.get(cartItem.getProductId());
             if (product != null) {
                 CartItemDTO cartItemDTO = new CartItemDTO();
+                cartItemDTO.setCartId(cart.getId());
+                cartItemDTO.setId(cartItem.getId());
                 cartItemDTO.setProductId(product.getId());
                 cartItemDTO.setProductName(product.getName());
                 cartItemDTO.setQuantity(cartItem.getQuantity());
@@ -83,6 +86,10 @@ public class CartService {
     // get Product by ID
     public ProductDTO getProductById(Long productId) {
         ResponseEntity<ProductDTO> response = restTemplate.getForEntity("http://PRODUCT-SERVICE/products/" + productId, ProductDTO.class);
+
+        System.out.println(response.getStatusCode());
+        System.out.println("Response from Product service is"+response.getBody().toString());
+
         return response.getBody();
     }
 
@@ -98,8 +105,7 @@ public class CartService {
 
     // Add Item to Cart
     @Transactional
-    public CartItemDTO addItemToCart(AddItemRequest addItemRequest){
-        Long userId = addItemRequest.getUserId();
+    public CartItemDTO addItemToCart(Long userId,AddItemRequest addItemRequest){
         Long productId = addItemRequest.getProductId();
         Integer quantity = addItemRequest.getQuantity();
 
@@ -165,6 +171,8 @@ public class CartService {
         cartRepository.delete(cart);
         return new ResponseMessage("Cart cleared for user ID: " + userId);
     }
+
+
 
 
 }
