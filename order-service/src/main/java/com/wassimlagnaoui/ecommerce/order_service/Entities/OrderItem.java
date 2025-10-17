@@ -19,7 +19,7 @@ public class OrderItem {
     private int quantity;
     private double price;
 
-    private Long productId; // Storing productId instead of Product entity to keep bounded context simple
+    private Long productId;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
