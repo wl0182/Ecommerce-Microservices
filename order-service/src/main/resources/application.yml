@@ -1,13 +1,97 @@
 spring:
   application:
-    name: order-service # Change the application name to order-service
+    name: order-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ecommerce?currentSchema=order_db
+    username: appuser
+    password: apppassword
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+    consumer:
+      group-id: order-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "*"
 
 server:
   port:
-    8086 # Change the port number to 8086
-
+    7004
 
 eureka:
-    client:
-        service-url:
-          defaultZone: http://localhost:8761/eureka/
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+
+# Services URLs :
+services:
+  product-service:
+    url: http://PRODUCT-SERVICE
+  payment-service:
+    url: http://PAYMENT-SERVICE
+  user-service:
+    url: http://USER-SERVICE
+
+
+# Resilience4j Configuration for fault tolerance patterns
+resilience4j:
+  # Circuit Breaker configuration to prevent cascading failures
+  circuitbreaker:
+    instances:
+      order-service:
+        # Minimum number of calls before circuit breaker can trip
+        minimum-number-of-calls: 5
+        # Failure rate threshold to open circuit (50%)
+        failure-rate-threshold: 50
+        # Time circuit stays open before transitioning to half-open
+        wait-duration-in-open-state: 30s
+        # Number of calls allowed in half-open state
+        permitted-number-of-calls-in-half-open-state: 3
+        # Maximum time to wait for a call to complete
+        slow-call-duration-threshold: 2s
+        # Percentage of slow calls that will trip the circuit
+        slow-call-rate-threshold: 50
+
+  # Retry configuration for transient failures
+  retry:
+    instances:
+      order-service:
+        # Maximum number of retry attempts
+        max-attempts: 3
+        # Wait time between retries
+        wait-duration: 1s
+        # Exponential backoff multiplier
+        exponential-backoff-multiplier: 2
+
+  # Rate Limiter configuration to control request rate
+  ratelimiter:
+    instances:
+      order-service:
+        # Number of permits available per refresh period
+        limit-for-period: 10
+        # Time period for the limit
+        limit-refresh-period: 1s
+        # Time a thread waits for permission
+        timeout-duration: 3s
+
+  # Bulkhead configuration to isolate resources
+  bulkhead:
+    instances:
+      order-service:
+        # Maximum number of concurrent calls
+        max-concurrent-calls: 5
+        # Maximum time to wait for a permit
+        max-wait-duration: 1s
