@@ -2,23 +2,23 @@ package com.wassimlagnaoui.ecommerce.order_service.DTO;
 
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateOrderDTO {
+@Builder
+public class OrderCreatedResponse {
 
-    @NonNull
+    private Long id;
     private Long userId;
     private List<OrderItemDTO> items;
-    private String paymentMethod;
-    private Long addressId;
+    private double totalAmount;
+    private String status;
+    private String createdAt;
 
-
-
-} // { userId, items:[{ productId, quantity }], paymentMethod, addressId }
+} // { id, userId, items:[{ productId, quantity, price }], totalAmount, status, createdAt }

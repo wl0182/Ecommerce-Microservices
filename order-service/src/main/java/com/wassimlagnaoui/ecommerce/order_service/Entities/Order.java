@@ -18,7 +18,7 @@ public class Order {
     @Id @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
     private Long userId;
-    private String userEmail;
+
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<OrderItem> orderItems;
