@@ -12,4 +12,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByUserId(Long userId);
 
+
+    // avoid N+1 problem when fetching orders with their items
+    @Query("SELECT o FROM Order o JOIN FETCH o.orderItems WHERE o.userId = :userId")
+    List<Order> findOrderByUserIdWithItems(Long userId);
+
 }
