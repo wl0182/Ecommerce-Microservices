@@ -8,6 +8,8 @@ import com.wassimlagnaoui.ecommerce.order_service.Exception.OrderNotFound;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderItemRepository;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Fallback;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OrderService {
 
@@ -39,8 +42,7 @@ public class OrderService {
     @Value("${product.service.url}")
     private String productServiceUrl;
 
-
-
+    // Inject a Logger
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
@@ -123,7 +125,10 @@ public class OrderService {
                 .createdAt(order.getOrderDate())
                 .updatedAt(order.getLastUpdated())
                 .build();  // { id, userId, items:[{ productId, productName ,quantity, price }], totalAmount, status, createdAt, updatedAt }
-    }
+    } 
+    
+    // get orders by user id Alternative implementation without Product Name
+
 
     @Transactional(readOnly = true)
     public List<OrderDTO> getOrdersByUserId(Long userId) {
@@ -191,6 +196,7 @@ public class OrderService {
 
 
     private ProductDTO getProductByIdFallback(Long productId, Throwable throwable) {
+       log.info("Fallback executed for getProductById with productId: " + productId + " due to: " + throwable.getMessage());
         return ProductDTO.builder()
                 .id(productId)
                 .name("Unknown Product")
@@ -200,6 +206,7 @@ public class OrderService {
     }
 
     private List<ProductDTO> getProductsByIdFallback(List<Long> productIds, Throwable throwable) {
+        log.info("Fallback executed for getProductsByIds with productIds: " + productIds + " due to: " + throwable.getMessage());
         List<ProductDTO> fallbackProducts = new ArrayList<>();
         for (Long productId : productIds) {
             fallbackProducts.add(ProductDTO.builder()
