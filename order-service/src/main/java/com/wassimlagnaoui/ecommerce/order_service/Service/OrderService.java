@@ -96,7 +96,6 @@ public class OrderService {
 
         // get product id for each orderItem
         List<Long> productIds = orderItems.stream().map(OrderItem::getProductId).collect(Collectors.toList());
-
         List<ProductDTO> products = getProductsByIds(productIds);
 
         // create a map of product id to productDTO for easy lookup
@@ -126,9 +125,53 @@ public class OrderService {
                 .build();  // { id, userId, items:[{ productId, productName ,quantity, price }], totalAmount, status, createdAt, updatedAt }
     }
 
+    @Transactional(readOnly = true)
     public List<OrderDTO> getOrdersByUserId(Long userId) {
-        // Implementation
-        return null; // List of { id, userId, items:[{ productId,  ProductName, quantity, price }], totalAmount, status, createdAt, updatedAt }
+        List<Order> orders = orderRepository.findOrderByUserIdWithItems(userId);
+
+        List<OrderItem> allOrderItems = orders.stream()
+                .flatMap(order -> order.getOrderItems().stream())
+                .collect(Collectors.toList());
+
+        // get all product IDs from order items
+        List<Long> productIds = allOrderItems.stream()
+                .map(OrderItem::getProductId)
+                .distinct()
+                .collect(Collectors.toList());
+        List<ProductDTO> products = getProductsByIds(productIds);
+        // create a map of product id to productDTO for easy lookup
+        Map<Long,ProductDTO> productMap = products.stream().collect(Collectors.toMap(ProductDTO::getId,productDTO -> productDTO));
+
+        List<OrderDTO> orderDTOs = new ArrayList<>();
+
+        for (Order order : orders) {
+            List<OrderItemDTO> itemDTOs = new ArrayList<>();
+            for (OrderItem orderItem : order.getOrderItems()) {
+                ProductDTO product = productMap.get(orderItem.getProductId());
+                if (product != null) {
+                    OrderItemDTO orderItemDTO = new OrderItemDTO();
+                    orderItemDTO.setProductId(product.getId());
+                    orderItemDTO.setProductName(product.getName());
+                    orderItemDTO.setQuantity(orderItem.getQuantity());
+                    orderItemDTO.setPrice(orderItem.getPrice());
+                    itemDTOs.add(orderItemDTO);
+                }
+            }
+
+            OrderDTO orderDTO = OrderDTO.builder()
+                    .id(order.getId())
+                    .userId(order.getUserId())
+                    .items(itemDTOs)
+                    .totalAmount(order.getOrderItems().stream().mapToDouble(value -> value.getPrice()*value.getQuantity()).sum())
+                    .status(order.getStatus().name())
+                    .createdAt(order.getOrderDate())
+                    .updatedAt(order.getLastUpdated())
+                    .build();
+
+            orderDTOs.add(orderDTO);
+        }
+
+        return orderDTOs; // List of { id, userId, items:[{ productId,  ProductName, quantity, price }], totalAmount, status, createdAt, updatedAt }
     }
 
 
@@ -138,11 +181,13 @@ public class OrderService {
         return restTemplate.getForObject(url, ProductDTO.class);
     }
 
+    @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "getProductsByIdFallback")
     private List<ProductDTO> getProductsByIds(List<Long> productIds) {
         String url = productServiceUrl + "/bulk" ;
         ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity(url,productIds,ProductDTO[].class);
         return List.of(response.getBody());
     }
+
 
 
     private ProductDTO getProductByIdFallback(Long productId, Throwable throwable) {
@@ -152,7 +197,19 @@ public class OrderService {
                 .description("Product information is currently unavailable.")
                 .price(0.0)
                 .build();
+    }
 
+    private List<ProductDTO> getProductsByIdFallback(List<Long> productIds, Throwable throwable) {
+        List<ProductDTO> fallbackProducts = new ArrayList<>();
+        for (Long productId : productIds) {
+            fallbackProducts.add(ProductDTO.builder()
+                    .id(productId)
+                    .name("Unknown Product")
+                    .description("Product information is currently unavailable.")
+                    .price(0.0)
+                    .build());
+        }
+        return fallbackProducts;
     }
 
 
