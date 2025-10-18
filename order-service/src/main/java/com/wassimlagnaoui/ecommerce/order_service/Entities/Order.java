@@ -24,8 +24,13 @@ public class Order {
     List<OrderItem> orderItems;
 
     private LocalDateTime orderDate;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+
     private double totalAmount;
+
+    private LocalDateTime lastUpdated;
 
 
 }
