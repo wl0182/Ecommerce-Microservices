@@ -128,6 +128,39 @@ public class OrderService {
     } 
     
     // get orders by user id Alternative implementation without Product Name
+    public List<OrdersForUserResponse> getOrdersTotalByUsers(Long userId){
+        List<Order> orders = orderRepository.findByUserId(userId);
+        return orders.stream().map(order -> {
+            OrdersForUserResponse response = new OrdersForUserResponse();
+            response.setId(order.getId());
+            response.setTotalAmount(order.getTotalAmount());
+            response.setStatus(order.getStatus().name());
+            response.setCreatedAt(order.getOrderDate().toString());
+            return response;
+        }).toList();  // list of // [{ id, totalAmount, status, createdAt }]
+    }
+
+    // ordered Cancelled
+    public OrderCancelled cancelOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFound("Order with id " + orderId + " not found"));
+        order.setStatus(OrderStatus.CANCELED);
+        order.setLastUpdated(LocalDateTime.now());
+        Order updatedOrder = orderRepository.save(order);
+        return OrderCancelled.builder()
+                .id(updatedOrder.getId())
+                .status(updatedOrder.getStatus().name())
+                .updatedAt(updatedOrder.getLastUpdated().toString())
+                .build(); // { id, status, updatedAt }
+    }
+    // get status of an order by order id
+    @Transactional(readOnly = true)
+    public OrderStatusDTO getOrderStatus(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFound("Order with id " + orderId + " not found"));
+        return OrderStatusDTO.builder()
+                .id(order.getId())
+                .status(order.getStatus().name())
+                .build(); // { id, status }
+    }
 
 
     @Transactional(readOnly = true)
