@@ -11,7 +11,7 @@ public class EventListener {
 
     // Event listener methods will be defined here
     @KafkaListener(topics = "product-test-topic", groupId = "Group1") // Listen to messages from the "product-topic" topic
-    public void consumeMessage(String message) {
+    public void consumeMessage(Object message) {
         System.out.println("Received message: " + message);
     }
 

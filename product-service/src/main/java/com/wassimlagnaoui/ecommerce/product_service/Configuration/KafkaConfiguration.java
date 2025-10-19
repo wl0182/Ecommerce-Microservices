@@ -53,7 +53,7 @@ public class KafkaConfiguration {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "product-service-group");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // Start consuming from the earliest offset if no offset is present
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // Trust all packages for JSON deserialization
         return props;
     }
