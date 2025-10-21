@@ -1,10 +1,88 @@
 spring:
   application:
     name: Payment-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ecommerce?currentSchema=payment_db
+    username: appuser
+    password: apppassword
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+
+  kafka:
+    bootstrap-servers: localhost:9092 # address of Kafka broker
+
+    producer: # producer-specific configurations
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer # key serializer class
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # value serializer class for JSON
+      acks: all # ensure message durability, all means all replicas must acknowledge the message
+      retries: 3 # number of retries on failure to send a message
+
+    consumer: # consumer-specific configurations
+      group-id: payment-service-group # consumer group id for load balancing, all instances with same group id share the load
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # key deserializer class
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # value deserializer class for JSON
+      auto-offset-reset: earliest # start consuming from the earliest message if no offset is present
+      properties:
+        spring.json.trusted.packages: "*" # trust all packages for JSON deserialization
+
+
+# Resilience4j Configuration for fault tolerance patterns
+resilience4j:
+  # Circuit Breaker configuration to prevent cascading failures
+  circuitbreaker:
+    instances:
+      cart-service:
+        # Minimum number of calls before circuit breaker can trip
+        minimum-number-of-calls: 5
+        # Failure rate threshold to open circuit (50%)
+        failure-rate-threshold: 50
+        # Time circuit stays open before transitioning to half-open
+        wait-duration-in-open-state: 30s
+        # Number of calls allowed in half-open state
+        permitted-number-of-calls-in-half-open-state: 3
+        # Maximum time to wait for a call to complete
+        slow-call-duration-threshold: 2s
+        # Percentage of slow calls that will trip the circuit
+        slow-call-rate-threshold: 50
+
+  # Retry configuration for transient failures
+  retry:
+    instances:
+      cart-service:
+        # Maximum number of retry attempts
+        max-attempts: 3
+        # Wait time between retries
+        wait-duration: 1s
+        # Exponential backoff multiplier
+        exponential-backoff-multiplier: 2
+
+  # Rate Limiter configuration to control request rate
+  ratelimiter:
+    instances:
+      payment-service:
+        # Number of permits available per refresh period
+        limit-for-period: 10
+        # Time period for the limit
+        limit-refresh-period: 1s
+        # Time a thread waits for permission
+        timeout-duration: 3s
+
+  # Bulkhead configuration to isolate resources
+  bulkhead:
+    instances:
+      cart-service:
+        # Maximum number of concurrent calls
+        max-concurrent-calls: 5
+        # Maximum time to wait for a permit
+        max-wait-duration: 1s
+
 
 server:
-  port:
-    7004
+  port: 7005
 
 
 eureka:

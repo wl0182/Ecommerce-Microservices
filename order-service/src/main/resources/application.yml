@@ -11,24 +11,27 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+
   kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all
-      retries: 3
-    consumer:
-      group-id: order-service-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      auto-offset-reset: earliest
+    bootstrap-servers: localhost:9092 # address of Kafka broker
+
+    producer: # producer-specific configurations
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer # key serializer class
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # value serializer class for JSON
+      acks: all # ensure message durability, all means all replicas must acknowledge the message
+      retries: 3 # number of retries on failure to send a message
+
+    consumer: # consumer-specific configurations
+      group-id: order-service-group # consumer group id for load balancing, all instances with same group id share the load
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # key deserializer class
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # value deserializer class for JSON
+      auto-offset-reset: earliest # start consuming from the earliest message if no offset is present
       properties:
-        spring.json.trusted.packages: "*"
+        spring.json.trusted.packages: "*" # trust all packages for JSON deserialization
+
 
 server:
-  port:
-    7004
+  port: 7004
 
 eureka:
   client:
