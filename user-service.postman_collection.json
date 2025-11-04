@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "User Service API",
+    "_postman_id": "9b6f7a6e-3c1f-4a8a-9b2d-0f5a1c2d3e4f",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection for UserController endpoints. Base url: {{base_url}}"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:7001",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get User By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7001",
+          "path": ["api", "users", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Create User (deprecated-create)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"name\": \"John Doe\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"1234567890\",\n  \"addressStreet\": \"123 Main St\",\n  \"addressCity\": \"City\",\n  \"addressZip\": \"12345\",\n  \"addressCountry\": \"Country\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/deprecated-create",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7001",
+          "path": ["api", "users", "deprecated-create"]
+        }
+      }
+    },
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"1234567890\",\n  \"addressStreet\": \"123 Main St\",\n  \"addressCity\": \"City\",\n  \"addressZip\": \"12345\",\n  \"addressCountry\": \"Country\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7001",
+          "path": ["api", "users", "register"]
+        }
+      }
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"newpassword\",\n  \"phoneNumber\": \"0987654321\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7001",
+          "path": ["api", "users", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get User Addresses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/{{userId}}/addresses",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7001",
+          "path": ["api", "users", "{{userId}}", "addresses"]
+        }
+      }
+    },
+    {
+      "name": "Add Address to User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"street\": \"456 Side St\",\n  \"city\": \"New City\",\n  \"zip\": \"67890\",\n  \"country\": \"New Country\",\n  \"isDefault\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/{{userId}}/addresses",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7001",
+          "path": ["api", "users", "{{userId}}", "addresses"]
+        }
+      }
+    }
+  ]
+}

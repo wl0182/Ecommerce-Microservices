@@ -1,0 +1,112 @@
+{
+  "info": {
+    "name": "Order Service API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "order-service-collection"
+  },
+  "item": [
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 1,\n  \"items\": [\n    { \"productId\": 101, \"quantity\": 2 }\n  ],\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"addressId\": 10\n}"
+        },
+        "url": {
+          "raw": "http://localhost:7004/api/orders/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7004",
+          "path": ["api", "orders", "1"]
+        }
+      },
+      "response": [
+        {
+          "name": "OrderCreatedResponse",
+          "body": "{\n  \"id\": 123,\n  \"userId\": 1,\n  \"items\": [\n    { \"productId\": 101, \"productName\": \"Product A\", \"quantity\": 2, \"price\": 50.0 }\n  ],\n  \"totalAmount\": 100.0,\n  \"status\": \"CREATED\",\n  \"createdAt\": \"2024-06-01T12:00:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Order By Id",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:7004/api/orders/123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7004",
+          "path": ["api", "orders", "123"]
+        }
+      },
+      "response": [
+        {
+          "name": "OrderDTO",
+          "body": "{\n  \"id\": 123,\n  \"userId\": 1,\n  \"items\": [\n    { \"productId\": 101, \"productName\": \"Product A\", \"quantity\": 2, \"price\": 50.0 }\n  ],\n  \"totalAmount\": 100.0,\n  \"status\": \"CREATED\",\n  \"createdAt\": \"2024-06-01T12:00:00Z\",\n  \"updatedAt\": \"2024-06-01T12:00:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Orders By User Id",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:7004/api/orders/user/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7004",
+          "path": ["api", "orders", "user", "1"]
+        }
+      },
+      "response": [
+        {
+          "name": "OrdersForUserResponse",
+          "body": "[\n  {\n    \"id\": 123,\n    \"totalAmount\": 100.0,\n    \"status\": \"CREATED\",\n    \"createdAt\": \"2024-06-01T12:00:00Z\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Cancel Order",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "http://localhost:7004/api/orders/cancel/123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7004",
+          "path": ["api", "orders", "cancel", "123"]
+        }
+      },
+      "response": [
+        {
+          "name": "OrderCancelled",
+          "body": "{\n  \"id\": 123,\n  \"status\": \"CANCELLED\",\n  \"updatedAt\": \"2024-06-01T13:00:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Order Status",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:7004/api/orders/status/123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "7004",
+          "path": ["api", "orders", "status", "123"]
+        }
+      },
+      "response": [
+        {
+          "name": "OrderStatusDTO",
+          "body": "{\n  \"id\": 123,\n  \"status\": \"CREATED\"\n}"
+        }
+      ]
+    }
+  ]
+}
+
