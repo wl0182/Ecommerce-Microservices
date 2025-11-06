@@ -15,7 +15,7 @@ import java.util.List;
 public class OrderDTO {
     private Long id;
     private Long userId;
-    private List<OrderItemDTO> items;
+    private List<OrderItemResponse> items;
     private double totalAmount;
     private String status;
     private LocalDateTime createdAt;
