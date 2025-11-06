@@ -15,7 +15,7 @@ public class CreateOrderDTO {
 
     @NonNull
     private Long userId;
-    private List<OrderItemDTO> items;
+    private List<OrderItemRequest> items;
     private String paymentMethod;
     private Long addressId;
 
