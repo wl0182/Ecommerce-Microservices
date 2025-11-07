@@ -46,6 +46,7 @@
     <module>Payment-Service</module>
     <module>Notification-Service</module>
     <module>Shipping-Service</module>
+    <module>common-events</module>
   </modules>
 
   <!-- Optional: shared plugin config can go here if needed -->
