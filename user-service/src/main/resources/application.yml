@@ -2,7 +2,7 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/ecommerce?currentSchema=user_management_db
+    url: jdbc:postgresql://localhost:5432/ecommerce?currentSchema=user_mangement_db
     username: appuser
     password: apppassword
     driver-class-name: org.postgresql.Driver
