@@ -1,5 +1,6 @@
 package com.wassimlagnaoui.ecommerce.product_service.Configuration;
 
+import com.wassimlagnaoui.ecommerce.product_service.Util.Topics;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
