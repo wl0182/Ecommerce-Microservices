@@ -16,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,17 +32,13 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
 
 
-
-
     // adding RestTemplate to call other services
     @Autowired
     private RestTemplate restTemplate;
 
 
-    @Value("${product.service.url}")
+    @Value("${services.product-service.url}")
     private String productServiceUrl;
-
-    // Inject a Logger
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
@@ -52,77 +50,74 @@ public class OrderService {
     @Transactional
     public OrderCreatedResponse createOrder(Long userId, CreateOrderDTO createOrderDTO){
         Order order = new Order();
-        order.setUserId(userId);
-        order.setStatus(OrderStatus.PENDING);
-        order.setOrderDate(LocalDateTime.now());
+        List<OrderItem> orderItems = new ArrayList<>();
 
-        // retrieve items from createOrderDTO and set them to order
-        List<OrderItem> orderItems = createOrderDTO.getItems().stream()
-                .map(orderItemDTO -> {
-                    OrderItem orderItem = new OrderItem();
-                    orderItem.setProductId(orderItemDTO.getProductId());
-                    orderItem.setQuantity(orderItemDTO.getQuantity());
-                    orderItem.setPrice(orderItemDTO.getPrice());
-                    return orderItem;
-                }).collect(Collectors.toUnmodifiableList());
+        order.setUserId(userId);
+        order.setOrderDate(LocalDateTime.now());
+        order.setStatus(OrderStatus.PENDING);
+        order.setLastUpdated(LocalDateTime.now());
+        double totalAmount = 0.0;
+
+        // get Product ids from createOrderDTO
+        List<Long> productIds = extractProductIds(createOrderDTO.getItems());
+
+        // get product details by list of ids
+        List<ProductDTO> products = getProductsByIds(productIds);
+
+        // map products by id
+        HashMap<Long,ProductDTO> productMap = mapProductsById(products);
+
+        for (OrderItemRequest itemRequest : createOrderDTO.getItems()) {
+            ProductDTO product = productMap.get(itemRequest.getProductId());
+            if (product == null) {
+                throw new RuntimeException("Product with id " + itemRequest.getProductId() + " not found");
+            }
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProductId(itemRequest.getProductId());
+            orderItem.setQuantity(itemRequest.getQuantity());
+            orderItem.setPrice(BigDecimal.valueOf(product.getPrice()));
+            orderItem.setOrder(order);
+
+            orderItems.add(orderItem);
+            totalAmount += product.getPrice() * itemRequest.getQuantity();
+        }
 
         order.setOrderItems(orderItems);
-
-        Double totalAmount = orderItems.stream().mapToDouble(value -> value.getPrice()*value.getQuantity()).sum();
+        order.setTotalAmount(totalAmount);
 
         Order savedOrder = orderRepository.save(order);
+        orderItemRepository.saveAll(orderItems);
+
+        List<OrderItemResponse> itemResponses = orderItems.stream().map(oi -> {
+            ProductDTO product = productMap.get(oi.getProductId());
+            return OrderItemResponse.builder()
+                    .productId(oi.getProductId())
+                    .productName(product != null ? product.getName() : "Unknown Product")
+                    .quantity(oi.getQuantity())
+                    .price(oi.getPrice())
+                    .productDescription(product != null ? product.getDescription() : "No description available")
+                    .productCategory(product != null ? product.getCategoryName() : "Uncategorized")
+                    .build();
+        }).collect(Collectors.toList());
+
+
+
 
         return OrderCreatedResponse.builder()
                 .id(savedOrder.getId())
-                .items(createOrderDTO.getItems())
-                .status(order.getStatus().name())
-                .totalAmount(totalAmount)
-                .userId(userId)
-                .createdAt(LocalDateTime.now().toString())
-                .build();
-
+                .userId(savedOrder.getUserId())
+                .items(itemResponses)
+                .totalAmount(savedOrder.getTotalAmount())
+                .status(savedOrder.getStatus().name())
+                .createdAt(savedOrder.getOrderDate().toString())
+                .build(); // { id, userId, items:[{ productId, name, quantity, price }], totalAmount, status, createdAt, updatedAt }
     }
 
 
 
     public OrderDTO getOrderById(Long orderId) {
-        // Implementation
 
-        Order order = orderRepository.findById(orderId).orElseThrow(()-> new OrderNotFound("Order with id "+ orderId +" not found"));
-
-        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-
-        List<OrderItemDTO> item = new ArrayList<>();
-
-        // get product id for each orderItem
-        List<Long> productIds = orderItems.stream().map(OrderItem::getProductId).collect(Collectors.toList());
-        List<ProductDTO> products = getProductsByIds(productIds);
-
-        // create a map of product id to productDTO for easy lookup
-        Map<Long,ProductDTO> productMap = products.stream().collect(Collectors.toMap(ProductDTO::getId,productDTO -> productDTO));
-
-        for (OrderItem orderItem : orderItems) {
-            ProductDTO product = productMap.get(orderItem.getProductId());
-            if (product != null) {
-                OrderItemDTO orderItemDTO = new OrderItemDTO();
-                orderItemDTO.setProductId(product.getId());
-                orderItemDTO.setProductName(product.getName());
-                orderItemDTO.setQuantity(orderItem.getQuantity());
-                orderItemDTO.setPrice(orderItem.getPrice());
-                item.add(orderItemDTO);
-            }
-        }
-
-
-        return OrderDTO.builder()
-                .id(order.getId())
-                .userId(order.getUserId())
-                .items(item)
-                .totalAmount(orderItems.stream().mapToDouble(value -> value.getPrice()*value.getQuantity()).sum())
-                .status(order.getStatus().name())
-                .createdAt(order.getOrderDate())
-                .updatedAt(order.getLastUpdated())
-                .build();  // { id, userId, items:[{ productId, productName ,quantity, price }], totalAmount, status, createdAt, updatedAt }
+        return null;
     } 
     
     // get orders by user id Alternative implementation without Product Name
@@ -165,49 +160,75 @@ public class OrderService {
     public List<OrderDTO> getOrdersByUserId(Long userId) {
         List<Order> orders = orderRepository.findOrderByUserIdWithItems(userId);
 
-        List<OrderItem> allOrderItems = orders.stream()
+        if (orders.isEmpty()){
+            throw new OrderNotFound("No orders found for user with id " + userId);
+        }
+
+        List<OrderItem> items = orders.stream()
                 .flatMap(order -> order.getOrderItems().stream())
                 .collect(Collectors.toList());
 
-        // get all product IDs from order items
-        List<Long> productIds = allOrderItems.stream()
+        List<Long> productIds = items.stream()
                 .map(OrderItem::getProductId)
                 .distinct()
                 .collect(Collectors.toList());
+
+        // Fetch product details
         List<ProductDTO> products = getProductsByIds(productIds);
-        // create a map of product id to productDTO for easy lookup
-        Map<Long,ProductDTO> productMap = products.stream().collect(Collectors.toMap(ProductDTO::getId,productDTO -> productDTO));
+        HashMap<Long, ProductDTO> productMap = mapProductsById(products);
 
-        List<OrderDTO> orderDTOs = new ArrayList<>();
 
-        for (Order order : orders) {
-            List<OrderItemDTO> itemDTOs = new ArrayList<>();
-            for (OrderItem orderItem : order.getOrderItems()) {
-                ProductDTO product = productMap.get(orderItem.getProductId());
-                if (product != null) {
-                    OrderItemDTO orderItemDTO = new OrderItemDTO();
-                    orderItemDTO.setProductId(product.getId());
-                    orderItemDTO.setProductName(product.getName());
-                    orderItemDTO.setQuantity(orderItem.getQuantity());
-                    orderItemDTO.setPrice(orderItem.getPrice());
-                    itemDTOs.add(orderItemDTO);
-                }
-            }
+        List<OrderItemResponse> orderItemResponses = items.stream()
+                .map(item -> {
+                    ProductDTO product = productMap.get(item.getProductId());
+                    return OrderItemResponse.builder()
+                            .productId(item.getProductId())
+                            .productName(product != null ? product.getName() : "Unknown Product")
+                            .quantity(item.getQuantity())
+                            .price(item.getPrice())
+                            .productDescription(product != null ? product.getDescription() : "No description available")
+                            .productCategory(product != null ? product.getCategoryName() : "Uncategorized")
+                            .build();
+                })
+                .collect(Collectors.toList());
 
-            OrderDTO orderDTO = OrderDTO.builder()
+
+        List<OrderDTO> orderDTOS = orders.stream().map(order -> {
+            List<OrderItemResponse> itemsForOrder = orderItemResponses.stream()
+                    .filter(itemResponse -> {
+                        for (OrderItem item : order.getOrderItems()) {
+                            if (item.getProductId().equals(itemResponse.getProductId())
+                                    && item.getQuantity() == itemResponse.getQuantity()
+                                    && item.getPrice().equals(itemResponse.getPrice())) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    })
+                    .collect(Collectors.toList());
+
+            return OrderDTO.builder()
                     .id(order.getId())
                     .userId(order.getUserId())
-                    .items(itemDTOs)
-                    .totalAmount(order.getOrderItems().stream().mapToDouble(value -> value.getPrice()*value.getQuantity()).sum())
+                    .items(itemsForOrder)
+                    .totalAmount(order.getTotalAmount())
                     .status(order.getStatus().name())
                     .createdAt(order.getOrderDate())
                     .updatedAt(order.getLastUpdated())
                     .build();
+        }).collect(Collectors.toList());
 
-            orderDTOs.add(orderDTO);
-        }
 
-        return orderDTOs; // List of { id, userId, items:[{ productId,  ProductName, quantity, price }], totalAmount, status, createdAt, updatedAt }
+        return orderDTOS;
+    // List of { id, userId, items:[{ productId,  ProductName, quantity, price }], totalAmount, status, createdAt, updatedAt }
+    }
+
+    public List<ProductDTO> getProductsByIdsService(List<Long> productIds) {
+        return getProductsByIds(productIds);
+    }
+
+    public ProductDTO getProductByIdService(Long productId) {
+        return getProductById(productId);
     }
 
 
@@ -219,7 +240,7 @@ public class OrderService {
 
     @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "getProductsByIdFallback")
     private List<ProductDTO> getProductsByIds(List<Long> productIds) {
-        String url = productServiceUrl + "/bulk" ;
+        String url = productServiceUrl + "/products/bulk" ;
         ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity(url,productIds,ProductDTO[].class);
         return List.of(response.getBody());
     }
@@ -248,6 +269,21 @@ public class OrderService {
                     .build());
         }
         return fallbackProducts;
+
+    }
+
+    private HashMap<Long,ProductDTO> mapProductsById(List<ProductDTO> products){
+        HashMap<Long,ProductDTO> productMap = new HashMap<>();
+        for (ProductDTO product : products) {
+            productMap.put(product.getId(), product);
+        }
+        return productMap;
+    }
+
+    private List<Long> extractProductIds(List<OrderItemRequest> orderItems){
+        return orderItems.stream()
+                .map(OrderItemRequest::getProductId)
+                .collect(Collectors.toList());
     }
 
 

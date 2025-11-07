@@ -3,6 +3,7 @@ package com.wassimlagnaoui.ecommerce.order_service.Controller;
 
 import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.order_service.Service.OrderService;
+import jakarta.ws.rs.PathParam;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,8 +22,8 @@ public class OrderController {
 
 
     // create new Order
-    @PostMapping("/{userId}")
-    public ResponseEntity<OrderCreatedResponse> createOrder(@PathVariable("userId") Long userId,@RequestBody CreateOrderDTO createOrderDTO) {
+    @PostMapping("/place-order")
+    public ResponseEntity<OrderCreatedResponse> createOrder(@PathParam("userId") Long userId, @RequestBody CreateOrderDTO createOrderDTO) {
         OrderCreatedResponse orderDTO = orderService.createOrder(userId,createOrderDTO);
         return ResponseEntity.ok(orderDTO);
     }
@@ -35,10 +36,13 @@ public class OrderController {
     }
 
     // get order by user id
+    @GetMapping("/user/{userId}")
     public ResponseEntity<List<OrderDTO>> getOrdersByUserId(@PathVariable("userId") Long userId) {
         List<OrderDTO> orderDTO = orderService.getOrdersByUserId(userId);
         return ResponseEntity.ok(orderDTO);
     }
+
+
 
     // cancel order
     @PutMapping("/cancel/{orderId}")
@@ -54,6 +58,15 @@ public class OrderController {
         OrderStatusDTO status = orderService.getOrderStatus(orderId);
         return ResponseEntity.ok(status);
     }
+
+
+    // Get Products
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable("productId") Long productId) {
+        ProductDTO productDTO = orderService.getProductByIdService(productId);
+        return ResponseEntity.ok(productDTO);
+    }
+
 
 
 
