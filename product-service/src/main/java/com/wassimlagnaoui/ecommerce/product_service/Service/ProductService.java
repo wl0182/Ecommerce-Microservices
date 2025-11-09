@@ -1,5 +1,7 @@
 package com.wassimlagnaoui.ecommerce.product_service.Service;
 
+import com.wassimlagnaoui.common_events.DummyEvent;
+import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.InventoryTransaction;
@@ -10,6 +12,7 @@ import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundExc
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.InventoryTransactionRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.ProductRepository;
+import com.wassimlagnaoui.ecommerce.product_service.Util.Topics;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -36,22 +39,18 @@ public class ProductService {
     }
 
 
-    // kakfka Event test
+    // kafka Event test
     public String sendTestMessage() {
-
-        ProductDTO productDTO = ProductDTO.builder()
-                .id(1L)
-                .name("Test Product")
-                .description("This is a test product")
-                .price(99.99)
-                .categoryName("Test Category")
-                .sku("TESTSKU123")
+        DummyEvent dummyEvent = DummyEvent.builder()
+                .message("This is a test message from Product Service")
+                .timestamp(java.time.LocalDateTime.now())
                 .build();
 
-        kafkaTemplate.send("product-test-topic", productDTO);
+
+        kafkaTemplate.send(KafkaTopics.TOPIC_PRODUCT_TEST, dummyEvent);
 
 
-        return "Message sent to Kafka topic: Product with the ID: " + productDTO.getId().toString();
+        return "Message sent to Kafka topic: Dummy Event with the message "+dummyEvent.getMessage();
     }
 
     // get all products
