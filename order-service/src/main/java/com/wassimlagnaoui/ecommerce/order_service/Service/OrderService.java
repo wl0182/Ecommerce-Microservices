@@ -232,13 +232,13 @@ public class OrderService {
     }
 
 
-    @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "getProductByIdFallback")
+    @CircuitBreaker(name = "product-service", fallbackMethod = "getProductByIdFallback")
     private ProductDTO getProductById(Long productId) {
         String url = productServiceUrl + "/products/" + productId;
         return restTemplate.getForObject(url, ProductDTO.class);
     }
 
-    @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "getProductsByIdFallback")
+    @CircuitBreaker(name = "product-service", fallbackMethod = "getProductsByIdFallback")
     private List<ProductDTO> getProductsByIds(List<Long> productIds) {
         String url = productServiceUrl + "/products/bulk" ;
         ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity(url,productIds,ProductDTO[].class);
