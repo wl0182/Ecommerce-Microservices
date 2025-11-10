@@ -54,7 +54,7 @@ resilience4j:
   # Circuit Breaker configuration to prevent cascading failures
   circuitbreaker:
     instances:
-      order-service:
+      product-service:
         # Minimum number of calls before circuit breaker can trip
         minimum-number-of-calls: 5
         # Failure rate threshold to open circuit (50%)
@@ -71,7 +71,7 @@ resilience4j:
   # Retry configuration for transient failures
   retry:
     instances:
-      order-service:
+      product-service:
         # Maximum number of retry attempts
         max-attempts: 3
         # Wait time between retries
@@ -82,7 +82,7 @@ resilience4j:
   # Rate Limiter configuration to control request rate
   ratelimiter:
     instances:
-      order-service:
+      product-service:
         # Number of permits available per refresh period
         limit-for-period: 10
         # Time period for the limit
@@ -93,7 +93,7 @@ resilience4j:
   # Bulkhead configuration to isolate resources
   bulkhead:
     instances:
-      order-service:
+      product-service:
         # Maximum number of concurrent calls
         max-concurrent-calls: 5
         # Maximum time to wait for a permit
