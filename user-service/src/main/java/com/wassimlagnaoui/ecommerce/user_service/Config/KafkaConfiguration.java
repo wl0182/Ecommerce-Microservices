@@ -1,5 +1,6 @@
 package com.wassimlagnaoui.ecommerce.user_service.Config;
 
+import com.wassimlagnaoui.common_events.KafkaTopics;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +11,6 @@ public class KafkaConfiguration {
     // new topic bean
     @Bean
     public NewTopic userCreatedTopic() {
-        return new NewTopic("user-created", 1, (short) 1);
+        return new NewTopic(KafkaTopics.USER_REGISTERED, 1, (short) 1);
     }
 }
