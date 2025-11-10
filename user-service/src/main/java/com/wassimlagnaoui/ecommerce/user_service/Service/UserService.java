@@ -1,6 +1,8 @@
 package com.wassimlagnaoui.ecommerce.user_service.Service;
 
 
+import com.wassimlagnaoui.common_events.Events.UserService.UserRegisteredEvent;
+import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.user_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.user_service.Exceptions.UserNotFoundException;
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
@@ -8,10 +10,12 @@ import com.wassimlagnaoui.ecommerce.user_service.Model.User;
 import com.wassimlagnaoui.ecommerce.user_service.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,6 +27,9 @@ public class UserService {
     @Autowired
     @Qualifier("PasswordEncoder")
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -69,6 +76,14 @@ public class UserService {
         user.setAddresses(List.of(address));
 
         User savedUser = userRepository.save(user);
+
+        UserRegisteredEvent event = new UserRegisteredEvent();
+        event.setUserId(savedUser.getId().toString());
+        event.setEmail("lagnaouiw@gmail.com");
+        event.setRegisteredAt(LocalDateTime.now().toString());
+        event.setName(savedUser.getName());
+
+        kafkaTemplate.send(KafkaTopics.USER_REGISTERED, event); // send event to kafka topic
 
         return new UserDetails(savedUser.getId(), savedUser.getEmail(), savedUser.getName(), savedUser.getPhoneNumber());
 
