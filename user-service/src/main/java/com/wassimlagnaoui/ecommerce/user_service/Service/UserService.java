@@ -8,6 +8,8 @@ import com.wassimlagnaoui.ecommerce.user_service.Exceptions.UserNotFoundExceptio
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
 import com.wassimlagnaoui.ecommerce.user_service.Model.User;
 import com.wassimlagnaoui.ecommerce.user_service.Repository.UserRepository;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -45,6 +47,7 @@ public class UserService {
 
     // create user
     @Transactional
+    @Deprecated
     public UserDetails createUser(CreateUserDTO userDTO){
         User user = new User();
         user.setEmail(userDTO.getEmail());
@@ -57,6 +60,8 @@ public class UserService {
 
     // register user with email and password
     @Transactional
+    @RateLimiter(name = "userRegistrationRateLimiter", fallbackMethod = "rateLimitFallback")
+    @Retry(name = "userRegistrationRetry", fallbackMethod = "retryFallback")
     public UserDetails registerUser(RegisterUserDTO registerUserDTO){
         User user = new User();
         Address address = new Address();
