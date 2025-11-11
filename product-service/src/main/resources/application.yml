@@ -34,52 +34,38 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-# Resilience4j Configuration for fault tolerance patterns
+
 resilience4j:
-  # Circuit Breaker configuration to prevent cascading failures
-  circuitbreaker:
+  retry: # retry configuration is used to automatically retry failed operations
     instances:
-      product-service:
-        # Minimum number of calls before circuit breaker can trip
-        minimum-number-of-calls: 5
-        # Failure rate threshold to open circuit (50%)
-        failure-rate-threshold: 50
-        # Time circuit stays open before transitioning to half-open
-        wait-duration-in-open-state: 30s
-        # Number of calls allowed in half-open state
-        permitted-number-of-calls-in-half-open-state: 3
-        # Maximum time to wait for a call to complete
-        slow-call-duration-threshold: 2s
-        # Percentage of slow calls that will trip the circuit
-        slow-call-rate-threshold: 50
+      productUpdateRetry:
+        max-attempts: 2
+        wait-duration: 300ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.io.IOException
 
-  # Retry configuration for transient failures
-  retry:
+  ratelimiter: # rate limiter configuration is used to limit the rate of requests to a service to prevent overload
     instances:
-      product-service:
-        # Maximum number of retry attempts
-        max-attempts: 3
-        # Wait time between retries
-        wait-duration: 1s
-        # Exponential backoff multiplier
-        exponential-backoff-multiplier: 2
+      productListRateLimiter:
+        limit-for-period: 200 # allow 200 requests per period
+        limit-refresh-period: 60s # period duration of 60 seconds
+        timeout-duration: 0
+        subscribe-for-events: true
 
-  # Rate Limiter configuration to control request rate
-  ratelimiter:
+  bulkhead: # bulkhead configuration is used to limit the number of concurrent calls to a service to prevent overload, isolating failures
     instances:
-      product-service:
-        # Number of permits available per refresh period
-        limit-for-period: 10
-        # Time period for the limit
-        limit-refresh-period: 1s
-        # Time a thread waits for permission
-        timeout-duration: 3s
+      inventoryBulkhead:
+        max-concurrent-calls: 10 # limit to 10 calls at a time to inventory service
+        max-wait-duration: 0 # do not wait if bulkhead is full
+        writable-stack-trace-enabled: false
 
-  # Bulkhead configuration to isolate resources
-  bulkhead:
-    instances:
-      product-service:
-        # Maximum number of concurrent calls
-        max-concurrent-calls: 5
-        # Maximum time to wait for a permit
-        max-wait-duration: 1s
+
+management:
+  health:
+    circuitbreakers:
+      enabled: false  # no external circuitbreaker for this service
+  endpoints:
+    web:
+      exposure:
+        include: health,info
