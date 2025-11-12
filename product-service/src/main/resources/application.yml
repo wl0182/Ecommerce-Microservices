@@ -36,29 +36,24 @@ eureka:
 
 
 resilience4j:
-  retry: # retry configuration is used to automatically retry failed operations
+  retry:
     instances:
       productUpdateRetry:
-        max-attempts: 2
-        wait-duration: 300ms
-        retry-exceptions:
-          - org.springframework.web.client.ResourceAccessException
-          - java.io.IOException
+        maxAttempts: 2
+        waitDuration: 500ms
 
-  ratelimiter: # rate limiter configuration is used to limit the rate of requests to a service to prevent overload
+  ratelimiter:
     instances:
-      productListRateLimiter:
-        limit-for-period: 200 # allow 200 requests per period
-        limit-refresh-period: 60s # period duration of 60 seconds
-        timeout-duration: 0
-        subscribe-for-events: true
+      productListingRateLimiter:
+        limitForPeriod: 200
+        limitRefreshPeriod: 1m
+        timeoutDuration: 0
 
-  bulkhead: # bulkhead configuration is used to limit the number of concurrent calls to a service to prevent overload, isolating failures
+  bulkhead:
     instances:
       inventoryBulkhead:
-        max-concurrent-calls: 10 # limit to 10 calls at a time to inventory service
-        max-wait-duration: 0 # do not wait if bulkhead is full
-        writable-stack-trace-enabled: false
+        maxConcurrentCalls: 10
+        maxWaitDuration: 0
 
 
 management:

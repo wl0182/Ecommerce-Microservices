@@ -43,21 +43,29 @@ public class ProductController {
     }
 
     // increment stock
-    @PostMapping("/{id}/increment-stock")
-    public ResponseEntity<TransactionDTO> incrementStock(@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
-        TransactionDTO updatedProduct = productService.incrementInventory(updateProductInventoryDTO);
+    @PutMapping("/{id}/increment-stock")
+    public ResponseEntity<TransactionDTO> incrementStock(@PathVariable("id") Long id,@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
+        TransactionDTO updatedProduct = productService.incrementInventory(id,updateProductInventoryDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 
     // decrement stock
-    @PostMapping("/{id}/decrement-stock")
-    public ResponseEntity<TransactionDTO> decrementStock(@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
-        TransactionDTO updatedProduct = productService.decrementInventory(updateProductInventoryDTO);
+    @PutMapping("/{id}/decrement-stock")
+    public ResponseEntity<TransactionDTO> decrementStock(@PathVariable("id") Long id,@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
+        TransactionDTO updatedProduct = productService.decrementInventory(id,updateProductInventoryDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 
+    // Get Inventory by product id
+    @GetMapping("/{id}/inventory")
+    public ResponseEntity<InventoryDTO> getInventoryByProductId(@PathVariable Long id){
+        InventoryDTO inventoryDTO = productService.getInventoryByProductId(id);
+        return ResponseEntity.ok(inventoryDTO);
 
-    // get All Categories
+    }
+
+
+
 
 
     @GetMapping("/categories")
@@ -73,13 +81,7 @@ public class ProductController {
         return ResponseEntity.ok(categoryDTO);
     }
 
-    // Get Inventory by product id
-    @GetMapping("/{id}/inventory")
-    public ResponseEntity<InventoryDTO> getInventoryByProductId(@PathVariable Long id){
-        InventoryDTO inventoryDTO = productService.getInventoryByProductId(id);
-        return ResponseEntity.ok(inventoryDTO);
 
-    }
 
     // update Category
     @PutMapping("/categories/{id}")
@@ -103,6 +105,14 @@ public class ProductController {
         List<ProductDTO> products = productService.getProductsByIds(productIds);
         return ResponseEntity.ok(products);
     }
+
+
+
+
+
+
+
+
 
 
 

@@ -116,9 +116,9 @@ public class ProductService {
 
     // update inventory decrement and increment methods
     @Transactional
-    public TransactionDTO incrementInventory(UpdateProductInventoryDTO updateProductInventoryDTO) {
+    public TransactionDTO incrementInventory(Long productId,UpdateProductInventoryDTO updateProductInventoryDTO) {
         // Fetch the product
-        Product product = productRepository.findById(updateProductInventoryDTO.getProductId())
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + updateProductInventoryDTO.getProductId()));
 
         // Increment the stock quantity
@@ -141,9 +141,9 @@ public class ProductService {
 
     }
 
-    public TransactionDTO decrementInventory(UpdateProductInventoryDTO updateProductInventoryDTO) {
+    public TransactionDTO decrementInventory(Long productId,UpdateProductInventoryDTO updateProductInventoryDTO) {
         // Fetch the product
-        Product product = productRepository.findById(updateProductInventoryDTO.getProductId())
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + updateProductInventoryDTO.getProductId()));
 
         // Decrement the stock quantity
