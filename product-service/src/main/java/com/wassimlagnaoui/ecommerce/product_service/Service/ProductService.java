@@ -240,4 +240,12 @@ public class ProductService {
     }
 
 
+    public CategoryDTO getCategoryById(Long id) {
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+        return CategoryDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .build();
+    }
 }

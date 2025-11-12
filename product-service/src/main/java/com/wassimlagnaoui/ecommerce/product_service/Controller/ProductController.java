@@ -68,27 +68,7 @@ public class ProductController {
 
 
 
-    @GetMapping("/categories")
-    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
-        List<CategoryDTO> categories = productService.getAllCategories();
-        return ResponseEntity.ok(categories);
-    }
 
-    // create Category
-    @PostMapping("/categories")
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CreateCategoryDTO createCategoryDTO) {
-        CategoryDTO categoryDTO = productService.createCategory(createCategoryDTO);
-        return ResponseEntity.ok(categoryDTO);
-    }
-
-
-
-    // update Category
-    @PutMapping("/categories/{id}")
-    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody CreateCategoryDTO createCategoryDTO) {
-        CategoryDTO categoryDTO = productService.updateCategory(id, createCategoryDTO);
-        return ResponseEntity.ok(categoryDTO);
-    }
 
 
     // Kafka test endpoint
