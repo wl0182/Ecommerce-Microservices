@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -36,9 +37,10 @@ public class ProductController {
     }
 
 
-    @PutMapping("/{id}/price")
-    public ResponseEntity<ProductDTO> updateProductPrice(@PathVariable Long id, @RequestParam Double newPrice) {
-        ProductDTO updatedProduct = productService.updateProductPrice(id, newPrice);
+   // update product
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody CreateProductDTO createProductDTO) {
+        ProductDTO updatedProduct = productService.updateProduct(id, createProductDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 
