@@ -34,52 +34,32 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-# Resilience4j Configuration for fault tolerance patterns
+
 resilience4j:
-  # Circuit Breaker configuration to prevent cascading failures
   circuitbreaker:
     instances:
-      cart-service:
-        # Minimum number of calls before circuit breaker can trip
-        minimum-number-of-calls: 5
-        # Failure rate threshold to open circuit (50%)
-        failure-rate-threshold: 50
-        # Time circuit stays open before transitioning to half-open
-        wait-duration-in-open-state: 30s
-        # Number of calls allowed in half-open state
-        permitted-number-of-calls-in-half-open-state: 3
-        # Maximum time to wait for a call to complete
-        slow-call-duration-threshold: 2s
-        # Percentage of slow calls that will trip the circuit
-        slow-call-rate-threshold: 50
+        cartServiceCircuitBreaker: # Name of the circuit breaker instance to be used when calling order service from cart service
+            registerHealthIndicator: true
+            slidingWindowSize: 10 # Number of calls to consider for the circuit breaker
+            minimumNumberOfCalls: 6 # Minimum number of calls before calculating failure rate
+            failureRateThreshold: 50 # Percentage of failures to open the circuit
+            waitDurationInOpenState: 10000 # Time to wait before transitioning from open to half-open state (in milliseconds)
+            permittedNumberOfCallsInHalfOpenState: 3  # Number of calls allowed in half-open state
+        kafkaCircuitBreaker: # we need this because we are calling kafka producer inside cart service
+            registerHealthIndicator: true
+            slidingWindowSize: 10
+            minimumNumberOfCalls: 3
+            failureRateThreshold: 50
+            waitDurationInOpenState: 5000 # in milliseconds
+            permittedNumberOfCallsInHalfOpenState: 3
 
-  # Retry configuration for transient failures
   retry:
     instances:
-      cart-service:
-        # Maximum number of retry attempts
-        max-attempts: 3
-        # Wait time between retries
-        wait-duration: 1s
-        # Exponential backoff multiplier
-        exponential-backoff-multiplier: 2
+      cartServiceRetry: # this name will be used in the annotation in the service class of cart service
+        maxAttempts: 3
+        waitDuration: 2000 # in milliseconds
+        exponentialBackoffMultiplier: 2
+        # Retry on all exceptions by default, can be customized further if needed
 
-  # Rate Limiter configuration to control request rate
-  ratelimiter:
-    instances:
-      cart-service:
-        # Number of permits available per refresh period
-        limit-for-period: 10
-        # Time period for the limit
-        limit-refresh-period: 1s
-        # Time a thread waits for permission
-        timeout-duration: 3s
 
-  # Bulkhead configuration to isolate resources
-  bulkhead:
-    instances:
-      cart-service:
-        # Maximum number of concurrent calls
-        max-concurrent-calls: 5
-        # Maximum time to wait for a permit
-        max-wait-duration: 1s
+
