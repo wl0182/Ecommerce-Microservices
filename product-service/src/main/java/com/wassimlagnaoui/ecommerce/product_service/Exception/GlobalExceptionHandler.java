@@ -37,4 +37,15 @@ public class GlobalExceptionHandler {
 
     }
 
+    // kafka event not sent exception handler
+    @ExceptionHandler(KafkaEventNotSentException.class)
+    public ResponseEntity<HashMap<String, String>> handleKafkaEventNotSentException(KafkaEventNotSentException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("type", "Kafka Event Not Sent");
+        errorResponse.put("message", ex.getMessage());
+        errorResponse.put("suggestion", "Please check Kafka server and connectivity.");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
+
 }
