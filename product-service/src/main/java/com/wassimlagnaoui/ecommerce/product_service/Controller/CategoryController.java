@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.product_service.Controller;
 
 import com.wassimlagnaoui.ecommerce.product_service.DTO.CategoryDTO;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateCategoryDTO;
+import com.wassimlagnaoui.ecommerce.product_service.DTO.MessageDTO;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Service.ProductService;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +54,14 @@ public class CategoryController {
     public ResponseEntity<List<?>> getProductsByCategoryId(@PathVariable Long id) {
         List<?> products = productService.getProductsByCategoryId(id);
         return ResponseEntity.ok(products);}
+
+
+    // Delete Category
+    @DeleteMapping("/{id}")
+    public ResponseEntity<MessageDTO> deleteCategory(@PathVariable Long id) {
+        MessageDTO messageDTO = productService.deleteCategory(id);
+        return ResponseEntity.ok(messageDTO);
+    }
 
 
 }

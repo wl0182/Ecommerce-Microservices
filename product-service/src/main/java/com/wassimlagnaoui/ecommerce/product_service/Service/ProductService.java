@@ -267,4 +267,10 @@ public class ProductService {
         return productDTOS;
 
     }
+
+    public MessageDTO deleteCategory(Long id) {
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + id));
+        categoryRepository.delete(category);
+        return MessageDTO.builder().message("Category deleted successfully").build();
+    }
 }
