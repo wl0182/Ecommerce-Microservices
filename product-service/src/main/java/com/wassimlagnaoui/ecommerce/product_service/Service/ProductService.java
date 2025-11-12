@@ -1,6 +1,7 @@
 package com.wassimlagnaoui.ecommerce.product_service.Service;
 
 import com.wassimlagnaoui.common_events.DummyEvent;
+import com.wassimlagnaoui.common_events.Events.ProductService.ProductUpdatedEvent;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
@@ -19,6 +20,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,7 +90,7 @@ public class ProductService {
         Product product = new Product();
         product.setName(createProductDTO.getName());
         product.setDescription(createProductDTO.getDescription());
-        product.setPrice(createProductDTO.getPrice());
+        product.setPrice(createProductDTO.getPrice().doubleValue());
         product.setSku(createProductDTO.getSku());
         product.setStockQuantity(createProductDTO.getStockQuantity());
         product.setCategory(categoryRepository.findById(createProductDTO.getCategoryId()).orElse(null));
@@ -272,5 +274,54 @@ public class ProductService {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + id));
         categoryRepository.delete(category);
         return MessageDTO.builder().message("Category deleted successfully").build();
+    }
+
+    public ProductDTO updateProduct(Long id, CreateProductDTO createProductDTO) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        // this is called from a patch endpoint so we need to check for null values
+        if (createProductDTO.getName() != null) {
+            product.setName(createProductDTO.getName());
+        }
+        if (createProductDTO.getDescription() != null) {
+            product.setDescription(createProductDTO.getDescription());
+        }
+        if (createProductDTO.getPrice() != null) {
+            product.setPrice(createProductDTO.getPrice().doubleValue());
+        }
+
+        if (createProductDTO.getSku() != null) {
+            product.setSku(createProductDTO.getSku());
+        }
+        if (createProductDTO.getStockQuantity() != null) {
+            product.setStockQuantity(createProductDTO.getStockQuantity());
+        }
+        if (createProductDTO.getCategoryId() != null) {
+            Category category = categoryRepository.findById(createProductDTO.getCategoryId())
+                    .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + createProductDTO.getCategoryId()));
+            product.setCategory(category);
+        }
+        Product savedProduct = productRepository.save(product);
+
+        // send Kafka event for product update
+        ProductUpdatedEvent productUpdatedEvent = ProductUpdatedEvent.builder()
+                .productId(savedProduct.getId().toString())
+                .name(savedProduct.getName())
+                .price(BigDecimal.valueOf(savedProduct.getPrice()))
+                .sku(savedProduct.getSku())
+                .stockQuantity(savedProduct.getStockQuantity())
+                .build();
+
+        kafkaTemplate.send(Topics.TOPIC_PRODUCT_UPDATED, productUpdatedEvent);
+
+
+
+        return ProductDTO.builder().id(savedProduct.getId())
+                .name(savedProduct.getName())
+                .description(savedProduct.getDescription())
+                .price(savedProduct.getPrice())
+                .categoryName(savedProduct.getCategory() != null ? savedProduct.getCategory().getName() : null)
+                .sku(savedProduct.getSku())
+                .build();
+
     }
 }
