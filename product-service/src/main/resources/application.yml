@@ -36,11 +36,24 @@ eureka:
 
 
 resilience4j:
+  circuitbreaker:
+    instances:
+      KafkaCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
   retry:
     instances:
       productUpdateRetry:
         maxAttempts: 2
         waitDuration: 500ms
+      kafkaRetry:
+        maxAttempts: 4
+        waitDuration: 1s
 
   ratelimiter:
     instances:

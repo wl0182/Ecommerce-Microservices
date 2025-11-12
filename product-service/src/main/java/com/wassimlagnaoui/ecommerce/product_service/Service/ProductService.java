@@ -10,11 +10,16 @@ import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.TransactionType;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.CategoryNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.InsufficientStockException;
+import com.wassimlagnaoui.ecommerce.product_service.Exception.KafkaEventNotSentException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.InventoryTransactionRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.ProductRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Util.Topics;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -23,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class ProductService {
@@ -57,6 +63,7 @@ public class ProductService {
     }
 
     // get all products
+    @RateLimiter(name = "productListingRateLimiter", fallbackMethod = "getAllProductsFallback")
     public List<ProductDTO> getAllProducts() {
         List<Product> products = productRepository.findAll();
         List<ProductDTO> productDTOS = new ArrayList<>();
@@ -72,6 +79,11 @@ public class ProductService {
         }
 
         return productDTOS;
+    }
+    // Fallback method for getAllProducts
+    public List<ProductDTO> getAllProductsFallback(Throwable throwable) {
+        // Fallback logic when the rate limit is exceeded
+        return new ArrayList<>();
     }
 
     public ProductDTO getProductById(Long id) {
@@ -201,7 +213,7 @@ public class ProductService {
 
     }
 
-
+    @Bulkhead(name = "inventoryBulkhead", fallbackMethod = "getInventoryByProductIdFallback")
     public InventoryDTO getInventoryByProductId(Long id) {
         Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
 
@@ -211,6 +223,15 @@ public class ProductService {
         inventoryDTO.setStockInventory(product.getStockQuantity());
 
         return inventoryDTO;
+    }
+    // Fallback method for getInventoryByProductId
+    public InventoryDTO getInventoryByProductIdFallback(Long id, Throwable throwable) {
+        // Fallback logic when the bulkhead is full
+        return InventoryDTO.builder()
+                .productId(id)
+                .productName("Unknown Product")
+                .stockInventory(0)
+                .build();
     }
 
     public CategoryDTO updateCategory(Long id, CreateCategoryDTO createCategoryDTO) {
@@ -276,6 +297,8 @@ public class ProductService {
         return MessageDTO.builder().message("Category deleted successfully").build();
     }
 
+    @Retry(name = "kafkaRetry", fallbackMethod = "updateProductFallback")
+    @CircuitBreaker(name = "kafkaCircuitBreaker", fallbackMethod = "updateProductFallback")
     public ProductDTO updateProduct(Long id, CreateProductDTO createProductDTO) {
         Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
         // this is called from a patch endpoint so we need to check for null values
@@ -311,8 +334,13 @@ public class ProductService {
                 .stockQuantity(savedProduct.getStockQuantity())
                 .build();
 
-        kafkaTemplate.send(Topics.TOPIC_PRODUCT_UPDATED, productUpdatedEvent);
-
+        try {
+            kafkaTemplate.send(Topics.TOPIC_PRODUCT_UPDATED, productUpdatedEvent).get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new KafkaEventNotSentException("Failed to send ProductUpdatedEvent to Kafka: " + e.getMessage());
+        }
 
 
         return ProductDTO.builder().id(savedProduct.getId())
@@ -323,5 +351,42 @@ public class ProductService {
                 .sku(savedProduct.getSku())
                 .build();
 
+    }
+
+    // Fallback method for updateProduct when Kafka is down
+    public ProductDTO updateProductFallback(Long id, CreateProductDTO createProductDTO, Throwable throwable) {
+        // Fallback logic when Kafka is down
+        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        // this is called from a patch endpoint so we need to check for null values
+        if (createProductDTO.getName() != null) {
+            product.setName(createProductDTO.getName());
+        }
+        if (createProductDTO.getDescription() != null) {
+            product.setDescription(createProductDTO.getDescription());
+        }
+        if (createProductDTO.getPrice() != null) {
+            product.setPrice(createProductDTO.getPrice().doubleValue());
+        }
+
+        if (createProductDTO.getSku() != null) {
+            product.setSku(createProductDTO.getSku());
+        }
+        if (createProductDTO.getStockQuantity() != null) {
+            product.setStockQuantity(createProductDTO.getStockQuantity());
+        }
+        if (createProductDTO.getCategoryId() != null) {
+            Category category = categoryRepository.findById(createProductDTO.getCategoryId())
+                    .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + createProductDTO.getCategoryId()));
+            product.setCategory(category);
+        }
+        Product savedProduct = productRepository.save(product);
+
+        return ProductDTO.builder().id(savedProduct.getId())
+                .name(savedProduct.getName())
+                .description(savedProduct.getDescription())
+                .price(savedProduct.getPrice())
+                .categoryName(savedProduct.getCategory() != null ? savedProduct.getCategory().getName() : null)
+                .sku(savedProduct.getSku())
+                .build();
     }
 }
