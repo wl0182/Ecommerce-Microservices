@@ -48,5 +48,11 @@ public class CategoryController {
         return ResponseEntity.ok(categoryDTO);
     }
 
+    // Get products by category id
+    @GetMapping("/{id}/products")
+    public ResponseEntity<List<?>> getProductsByCategoryId(@PathVariable Long id) {
+        List<?> products = productService.getProductsByCategoryId(id);
+        return ResponseEntity.ok(products);}
+
 
 }

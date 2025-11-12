@@ -7,6 +7,7 @@ import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.InventoryTransaction;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.TransactionType;
+import com.wassimlagnaoui.ecommerce.product_service.Exception.CategoryNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.InsufficientStockException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
@@ -241,11 +242,29 @@ public class ProductService {
 
 
     public CategoryDTO getCategoryById(Long id) {
-        Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + id));
         return CategoryDTO.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
                 .build();
+    }
+
+    public List<?> getProductsByCategoryId(Long id) {
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + id));
+        List<Product> products = productRepository.findByCategory(category);
+        List<ProductDTO> productDTOS = new ArrayList<>();
+        for (Product product : products) {
+            ProductDTO productDTO = ProductDTO.builder().id(product.getId())
+                    .name(product.getName())
+                    .description(product.getDescription())
+                    .price(product.getPrice())
+                    .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
+                    .sku(product.getSku())
+                    .build();
+            productDTOS.add(productDTO);
+        }
+        return productDTOS;
+
     }
 }

@@ -1,5 +1,6 @@
 package com.wassimlagnaoui.ecommerce.product_service.Repository;
 
+import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
 import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,7 +21,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> searchByNameOrDescription(String keyword);
 
 
-
-
-
+    @Query("SELECT p FROM Product p WHERE p.category = :category")
+    List<Product> findByCategory(Category category);
 }
