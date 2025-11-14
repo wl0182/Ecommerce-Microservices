@@ -28,6 +28,7 @@ public class KafkaEventPublisher {
     public void publishCartClearedEvent(CartClearedEvent event) {
         try {
             kafkaTemplate.send(KafkaTopics.CART_CLEARED, event).get();
+            log.info("Published CartClearedEvent to Kafka for userId: {}", event.getUserId());
         } catch (Exception e) {
             throw new KafkaPublisherException("Failed to publish CartClearedEvent to Kafka: " + e.getMessage());
         }
@@ -37,6 +38,8 @@ public class KafkaEventPublisher {
         // Log the failure or take alternative action
        log.info("Failed to publish CartClearedEvent for userId: {}. Error: {}", event.getUserId(), throwable.getMessage());
     }
+
+    // the cart cleared event is published when the cart is successfully cleared, no consumers for now. orphan event.
 
 
 
