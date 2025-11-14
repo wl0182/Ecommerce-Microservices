@@ -35,6 +35,24 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
 
 
+
+
+# Services URLs :
+services:
+  product-service:
+    url: http://PRODUCT-SERVICE
+  payment-service:
+    url: http://PAYMENT-SERVICE
+  user-service:
+    url: http://USER-SERVICE
+  order-service:
+    url: http://ORDER-SERVICE
+  cart-service:
+    url: http://CART-SERVICE
+  shipping-service:
+    url: http://SHIPPING-SERVICE
+
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -60,6 +78,8 @@ resilience4j:
         waitDuration: 2000 # in milliseconds
         exponentialBackoffMultiplier: 2
         # Retry on all exceptions by default, can be customized further if needed
+
+
 
 
 
