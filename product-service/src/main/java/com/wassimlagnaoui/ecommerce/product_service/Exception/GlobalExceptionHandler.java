@@ -31,8 +31,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<HashMap<String, String>> handleCategoryNotFoundException(CategoryNotFoundException ex) {
         HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
-        errorResponse.put("type", "Category Not Found");
-        errorResponse.put("message", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
 
     }
@@ -41,7 +39,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(KafkaEventNotSentException.class)
     public ResponseEntity<HashMap<String, String>> handleKafkaEventNotSentException(KafkaEventNotSentException ex) {
         HashMap<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", ex.getMessage());
         errorResponse.put("type", "Kafka Event Not Sent");
         errorResponse.put("message", ex.getMessage());
         errorResponse.put("suggestion", "Please check Kafka server and connectivity.");
