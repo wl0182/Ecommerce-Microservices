@@ -41,5 +41,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
     }
 
+    // handle order service down exception
+    @ExceptionHandler(OrderServiceDownException.class)
+    public  ResponseEntity<HashMap<String,String>>handleOrderServiceDownException(OrderServiceDownException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
+        errorResponse.put("message", "Order Service is currently unavailable");
+        errorResponse.put("suggestion", "Please try again later.");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+
+    }
+
 
 }
