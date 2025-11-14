@@ -221,6 +221,7 @@ public class ProductService {
         inventoryDTO.setProductId(product.getId());
         inventoryDTO.setProductName(product.getName());
         inventoryDTO.setStockInventory(product.getStockQuantity());
+        inventoryDTO.setSku(product.getSku());
 
         return inventoryDTO;
     }
