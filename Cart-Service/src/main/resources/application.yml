@@ -56,13 +56,6 @@ services:
 resilience4j:
   circuitbreaker:
     instances:
-        cartServiceCircuitBreaker: # Name of the circuit breaker instance to be used when calling order service from cart service
-            registerHealthIndicator: true
-            slidingWindowSize: 10 # Number of calls to consider for the circuit breaker
-            minimumNumberOfCalls: 6 # Minimum number of calls before calculating failure rate
-            failureRateThreshold: 50 # Percentage of failures to open the circuit
-            waitDurationInOpenState: 10000 # Time to wait before transitioning from open to half-open state (in milliseconds)
-            permittedNumberOfCallsInHalfOpenState: 3  # Number of calls allowed in half-open state
         kafkaCircuitBreaker: # we need this because we are calling kafka producer inside cart service
             registerHealthIndicator: true
             slidingWindowSize: 10
@@ -70,6 +63,14 @@ resilience4j:
             failureRateThreshold: 50
             waitDurationInOpenState: 5000 # in milliseconds
             permittedNumberOfCallsInHalfOpenState: 3
+        orderServiceCircuitBreaker:
+          registerHealthIndicator: true
+          slidingWindowSize: 10
+          minimumNumberOfCalls: 6
+          failureRateThreshold: 50
+          waitDurationInOpenState: 10000
+          permittedNumberOfCallsInHalfOpenState: 3
+
 
   retry:
     instances:
