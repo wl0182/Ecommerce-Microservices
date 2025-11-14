@@ -5,9 +5,12 @@ import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.*;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.Cart;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.CartItem;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.CartNotFoundException;
+import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.OrderServiceDownException;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartItemRepository;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.ws.rs.DELETE;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -203,6 +207,10 @@ public class CartService {
                 .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
 
+        if (cartItems.isEmpty()) {
+            throw new CartNotFoundException("Cart is empty for user ID: " + userId);
+        }
+
         List<OrderItemRequest> orderItems = new ArrayList<>();
         for (CartItem cartItem : cartItems) {
             OrderItemRequest orderItem = new OrderItemRequest();
@@ -214,27 +222,52 @@ public class CartService {
         CreateOrderDTO createOrderDTO = new CreateOrderDTO();
         createOrderDTO.setUserId(userId);
         createOrderDTO.setItems(orderItems);
-        try {
-            createOrderDTO.setPaymentMethod(checkoutRequest.getPaymentMethod().name()); // Enum may throw IllegalArgumentException if not matched
-        } catch (IllegalArgumentException e) {
-            log.info(e.getMessage());
+        if (checkoutRequest == null || checkoutRequest.getPaymentMethod() == null) {
             createOrderDTO.setPaymentMethod("UNKNOWN");
+        } else {
+            createOrderDTO.setPaymentMethod(checkoutRequest.getPaymentMethod().name());
         }
         createOrderDTO.setAddressId(checkoutRequest.getAddressId());
 
-        
-        // call order-service to create order with { userId, items:[{ productId, quantity }], paymentMethod, addressId }
+        // Call order service to create order
+        OrderCreatedResponse orderCreatedResponse = createOrder(createOrderDTO);
+        // If order creation failed, throw exception
+        if (orderCreatedResponse == null || "FAILED".equals(orderCreatedResponse.getStatus())) {
+            throw new OrderServiceDownException("Order Service is currently unavailable. Please try again later.");
+        }
+        // Clear cart after successful order creation
+        clearCart(userId);
+        // Return checkout response
+        CheckoutResponse checkoutResponse = new CheckoutResponse();
+        checkoutResponse.setOrderId(orderCreatedResponse.getId());
+        checkoutResponse.setStatus(orderCreatedResponse.getStatus());
+        checkoutResponse.setTotalAmount(BigDecimal.valueOf(orderCreatedResponse.getTotalAmount()));
+        checkoutResponse.setCreatedAt(orderCreatedResponse.getCreatedAt());
+        checkoutResponse.setUserId(userId);
 
+        return checkoutResponse;
 
-
-
-
-
-
-        return null;
     }
 
     // call create order API in order-service
+    @CircuitBreaker(name = "orderServiceCircuitBreaker", fallbackMethod = "createOrderFallback")
+    public OrderCreatedResponse createOrder(CreateOrderDTO createOrderDTO) {
+        ResponseEntity<OrderCreatedResponse> response = restTemplate.postForEntity(orderServiceUrl + "/api/orders/place-order", createOrderDTO, OrderCreatedResponse.class);
+
+        return response.getBody();
+    }
+
+    // Fallback method for createOrder
+    public OrderCreatedResponse createOrderFallback(CreateOrderDTO createOrderDTO, Throwable throwable) {
+        return OrderCreatedResponse.builder()
+                .id(-1L)
+                .userId(createOrderDTO.getUserId())
+                .items(new ArrayList<>())
+                .totalAmount(0.0)
+                .status("FAILED")
+                .createdAt(LocalDateTime.now().toString())
+                .build();
+    }
 
 
 
