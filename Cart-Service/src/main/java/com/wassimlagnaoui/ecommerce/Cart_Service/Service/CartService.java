@@ -1,5 +1,6 @@
 package com.wassimlagnaoui.ecommerce.Cart_Service.Service;
 
+import com.wassimlagnaoui.common_events.Events.CartService.CartClearedEvent;
 import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.*;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.Cart;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.CartItem;
@@ -7,14 +8,20 @@ import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.CartNotFoundException
 import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartItemRepository;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartRepository;
+import jakarta.ws.rs.DELETE;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 @Service
 public class CartService {
 
@@ -23,6 +30,13 @@ public class CartService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    // services
+    @Value("${services.order-service.url}")
+    private String orderServiceUrl ;
+
+    @Autowired
+    private KafkaEventPublisher kafkaEventPublisher;
 
 
 
@@ -77,6 +91,7 @@ public class CartService {
 
         return cartResponse; // { userId, items:[{ productId, productName, quantity, price }], totalAmount }
     }
+
 
     // bulk getProducts by IDs
     public List<ProductDTO> getProductsByIds(List<Long> productIds) {
@@ -164,13 +179,65 @@ public class CartService {
     }
 
     // clear cart
+    @Transactional
     public ResponseMessage clearCart(Long userId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
         cartItemRepository.deleteByCartId(cart.getId());
         cartRepository.delete(cart);
+
+        CartClearedEvent cartClearedEvent = CartClearedEvent.builder()
+                .userId(userId)
+                .clearedAt(Instant.now())
+                .build();
+        kafkaEventPublisher.publishCartClearedEvent(cartClearedEvent);
+
+
         return new ResponseMessage("Cart cleared for user ID: " + userId);
     }
+
+
+    // Checkout cart
+    public CheckoutResponse checkoutCart(Long userId, CheckoutRequest checkoutRequest) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
+        List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
+
+        List<OrderItemRequest> orderItems = new ArrayList<>();
+        for (CartItem cartItem : cartItems) {
+            OrderItemRequest orderItem = new OrderItemRequest();
+            orderItem.setProductId(cartItem.getProductId());
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItems.add(orderItem);
+        }
+
+        CreateOrderDTO createOrderDTO = new CreateOrderDTO();
+        createOrderDTO.setUserId(userId);
+        createOrderDTO.setItems(orderItems);
+        try {
+            createOrderDTO.setPaymentMethod(checkoutRequest.getPaymentMethod().name()); // Enum may throw IllegalArgumentException if not matched
+        } catch (IllegalArgumentException e) {
+            log.info(e.getMessage());
+            createOrderDTO.setPaymentMethod("UNKNOWN");
+        }
+        createOrderDTO.setAddressId(checkoutRequest.getAddressId());
+
+        
+        // call order-service to create order with { userId, items:[{ productId, quantity }], paymentMethod, addressId }
+
+
+
+
+
+
+
+        return null;
+    }
+
+    // call create order API in order-service
+
+
+
 
 
 
