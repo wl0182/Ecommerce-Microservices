@@ -1,8 +1,6 @@
 package com.wassimlagnaoui.ecommerce.Cart_Service.Controller;
 
-import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.AddItemRequest;
-import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.CartItemDTO;
-import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.ResponseMessage;
+import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.*;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Service.CartService;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +40,14 @@ public class CartController {
     public ResponseEntity<ResponseMessage> clearCart(@PathVariable Long userId) {
         ResponseMessage responseMessage = cartService.clearCart(userId);
         return ResponseEntity.ok(responseMessage);
+    }
+
+    // checkout
+    @PostMapping("/{userId}/checkout")
+    public ResponseEntity<CheckoutResponse> checkout(@PathVariable Long userId, @RequestBody CheckoutRequest checkoutRequest) {
+        CheckoutResponse responseMessage = cartService.checkoutCart(userId, checkoutRequest);
+        return ResponseEntity.ok(responseMessage);
+
     }
 
 
