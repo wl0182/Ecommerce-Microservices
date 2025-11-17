@@ -19,12 +19,13 @@ public class Cart {
     private Long id;
     private Long userId;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true ,fetch = FetchType.EAGER)
     private List<CartItem> cartItems;
 
 
 }
 
+// orphanRemoval = true means that if a CartItem is removed from the cartItems list, it will be deleted from the cart_items table in the database.
 
 /*
  * Cart → { id, userId, List<CartItem> }
