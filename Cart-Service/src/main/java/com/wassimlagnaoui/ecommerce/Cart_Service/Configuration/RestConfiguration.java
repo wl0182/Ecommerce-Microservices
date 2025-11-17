@@ -16,24 +16,6 @@ public class RestConfiguration {
     @Bean
     @LoadBalanced
     public RestTemplate restTemplate() {
-        // timeout configuration (milliseconds)
-        RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(3000)
-                .setConnectionRequestTimeout(3000)
-                .setSocketTimeout(3000)
-                .build();
-
-        CloseableHttpClient httpClient = HttpClients.custom()
-                .setDefaultRequestConfig(requestConfig)
-                .build();
-
-        HttpComponentsClientHttpRequestFactory requestFactory =
-                new HttpComponentsClientHttpRequestFactory((HttpClient) httpClient);
-        // redundant but explicit
-        requestFactory.setConnectTimeout(3000);
-        requestFactory.setReadTimeout(3000);
-        requestFactory.setConnectionRequestTimeout(3000);
-
         return new RestTemplate();
     }
 }
