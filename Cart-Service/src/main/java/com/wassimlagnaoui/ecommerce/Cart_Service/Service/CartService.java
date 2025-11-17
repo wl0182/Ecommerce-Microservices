@@ -39,6 +39,9 @@ public class CartService {
     @Value("${services.order-service.url}")
     private String orderServiceUrl ;
 
+    @Value("${services.product-service.url}")
+    private String productServiceUrl;
+
     @Autowired
     private KafkaEventPublisher kafkaEventPublisher;
 
@@ -104,7 +107,9 @@ public class CartService {
     }
     // get Product by ID
     public ProductDTO getProductById(Long productId) {
-        ResponseEntity<ProductDTO> response = restTemplate.getForEntity("http://PRODUCT-SERVICE/products/" + productId, ProductDTO.class);
+        String url = productServiceUrl + "/products/" + productId;
+
+        ResponseEntity<ProductDTO> response = restTemplate.getForEntity(url, ProductDTO.class);
 
         System.out.println(response.getStatusCode());
         System.out.println("Response from Product service is"+response.getBody().toString());
@@ -130,10 +135,13 @@ public class CartService {
 
         // Check if product exists in Product Service
         ProductDTO product;
+
         try {
-            product = getProductById(productId);
+             product = getProductById(productId);
+             log.info("Product retrieved: " + product.getName()+" with ID: " + product.getId() +" from Product Service.");
         } catch (Exception e) {
-            throw new ProductNotFoundException("Product not found with ID: " + productId);
+            log.info(e.getMessage());
+            throw new ProductNotFoundException("cannot add product with ID: " + productId + " to cart. Product service is unavailable or product does not exist.");
         }
 
         // check if cart exists for user
@@ -173,12 +181,22 @@ public class CartService {
     }
 
     // remove item from cart
+    @Transactional
     public ResponseMessage removeItemFromCart(Long userId, Long productId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
         CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found in cart with ID: " + productId));
-        cartItemRepository.delete(cartItem);
+
+        log.info("Retrieved cart item with ID: " + cartItem.getId() + " and Product ID: " + productId + " for removal.");
+
+        // delete cart item fron cart and then cart_items table
+        cart.getCartItems().remove(cartItem);
+
+
+        // cartItemRepository.delete(cartItem) did not work as expected here for unknown reasons
+        log.info("Deleted cart item with ID: " + cartItem.getId() + " and Product ID: " + productId + " from cart.");
+
         return new ResponseMessage("Product with ID: " + productId + " removed from cart.");
     }
 
@@ -187,7 +205,9 @@ public class CartService {
     public ResponseMessage clearCart(Long userId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
-        cartItemRepository.deleteByCartId(cart.getId());
+
+        cart.getCartItems().clear();
+        log.info("Cleared cart for user ID: " + userId);
         cartRepository.delete(cart);
 
         CartClearedEvent cartClearedEvent = CartClearedEvent.builder()
@@ -253,6 +273,8 @@ public class CartService {
     @CircuitBreaker(name = "orderServiceCircuitBreaker", fallbackMethod = "createOrderFallback")
     public OrderCreatedResponse createOrder(CreateOrderDTO createOrderDTO) {
         ResponseEntity<OrderCreatedResponse> response = restTemplate.postForEntity(orderServiceUrl + "/api/orders/place-order", createOrderDTO, OrderCreatedResponse.class);
+
+
 
         return response.getBody();
     }
