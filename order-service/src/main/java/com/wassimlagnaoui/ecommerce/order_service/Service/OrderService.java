@@ -1,5 +1,7 @@
 package com.wassimlagnaoui.ecommerce.order_service.Service;
 
+import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
+import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.Order;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderItem;
@@ -14,14 +16,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,6 +37,9 @@ public class OrderService {
     // adding RestTemplate to call other services
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private KafkaPublisher kafkaPublisher;
 
 
     @Value("${services.product-service.url}")
@@ -52,7 +57,7 @@ public class OrderService {
         Order order = new Order();
         List<OrderItem> orderItems = new ArrayList<>();
 
-        order.setUserId(userId);
+        order.setUserId(createOrderDTO.getUserId());
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         order.setLastUpdated(LocalDateTime.now());
@@ -100,6 +105,27 @@ public class OrderService {
                     .build();
         }).collect(Collectors.toList());
 
+        // Publish OrderCreateEvent to Kafka // { orderId, userId, totalAmount, paymentMethod, items:[{ productId, quantity, price }], createdAt }
+        OrderCreateEvent orderCreateEvent = OrderCreateEvent.builder()
+                .orderId(String.valueOf(savedOrder.getId()))
+                .userId(String.valueOf(savedOrder.getUserId()))
+                .totalAmount(savedOrder.getTotalAmount())
+                .paymentMethod(createOrderDTO.getPaymentMethod())
+                .items(orderItems.stream().map(oi -> OrderCreateEvent.Item.builder()
+                        .productId(String.valueOf(oi.getProductId()))
+                        .quantity(oi.getQuantity())
+                        .price(oi.getPrice().doubleValue())
+                        .build()).collect(Collectors.toList()))
+                .createdAt(savedOrder.getOrderDate().toString())
+                .build();
+
+        // Publish the event after committing the transaction
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                kafkaPublisher.publish(KafkaTopics.ORDER_CREATED, orderCreateEvent);
+            }
+        });
 
 
 
@@ -233,16 +259,16 @@ public class OrderService {
 
 
     @CircuitBreaker(name = "product-service", fallbackMethod = "getProductByIdFallback")
-    private ProductDTO getProductById(Long productId) {
+    public ProductDTO getProductById(Long productId) {
         String url = productServiceUrl + "/products/" + productId;
         return restTemplate.getForObject(url, ProductDTO.class);
     }
 
     @CircuitBreaker(name = "product-service", fallbackMethod = "getProductsByIdFallback")
-    private List<ProductDTO> getProductsByIds(List<Long> productIds) {
+    public List<ProductDTO> getProductsByIds(List<Long> productIds) {
         String url = productServiceUrl + "/products/bulk" ;
         ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity(url,productIds,ProductDTO[].class);
-        return List.of(response.getBody());
+        return Arrays.asList(response.getBody());
     }
 
 
