@@ -60,8 +60,6 @@ public class UserService {
 
     // register user with email and password
     @Transactional
-    @RateLimiter(name = "userRegistrationRateLimiter", fallbackMethod = "rateLimitFallback")
-    @Retry(name = "userRegistrationRetry", fallbackMethod = "retryFallback")
     public UserDetails registerUser(RegisterUserDTO registerUserDTO){
         User user = new User();
         Address address = new Address();
