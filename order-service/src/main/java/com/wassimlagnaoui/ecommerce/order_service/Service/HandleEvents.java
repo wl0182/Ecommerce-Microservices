@@ -1,6 +1,7 @@
 package com.wassimlagnaoui.ecommerce.order_service.Service;
 
 
+import com.wassimlagnaoui.common_events.Events.PaymentService.OrderPaidEvent;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentRefunded;
@@ -12,8 +13,14 @@ import com.wassimlagnaoui.ecommerce.order_service.Exception.OrderNotFound;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderItemRepository;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.math.BigDecimal;
 
 @Slf4j
 @Service
@@ -21,6 +28,9 @@ public class HandleEvents {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private KafkaPublisher kafkaPublisher;
 
     public HandleEvents(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
         this.orderRepository = orderRepository;
@@ -36,10 +46,28 @@ public class HandleEvents {
 
 
     @KafkaListener(topics = KafkaTopics.PAYMENT_PROCESSED, groupId = KafkaGroupIds.ORDER_SERVICE_GROUP)
+    @Transactional
     public void handlePaymentProcessed(PaymentProcessed paymentProcessed) {
         Order order = orderRepository.findById(paymentProcessed.getOrderId()).orElseThrow(()-> new OrderNotFound("Order not found with id: " + paymentProcessed.getOrderId()+" for payment processed event"));
         order.setStatus(OrderStatus.PAID);
         orderRepository.save(order);
+
+        OrderPaidEvent orderPaidEvent = new OrderPaidEvent();
+        orderPaidEvent.setOrderId(order.getId());
+        orderPaidEvent.setUserId(order.getUserId());
+        orderPaidEvent.setAmount(BigDecimal.valueOf(paymentProcessed.getAmount()));
+        orderPaidEvent.setPaymentMethod(paymentProcessed.getPaymentMethod());
+        orderPaidEvent.setPaymentStatus(paymentProcessed.getStatus());
+        orderPaidEvent.setPaidAt(paymentProcessed.getCreatedAt());
+
+
+        // { orderId, userId, amount, paymentMethod, paymentStatus, paidAt }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                kafkaPublisher.publish(KafkaTopics.ORDER_PAID,orderPaidEvent);
+            }
+        });
 
         log.info("Order with id: {} updated to PAID status after payment processed event", order.getId());
     }
