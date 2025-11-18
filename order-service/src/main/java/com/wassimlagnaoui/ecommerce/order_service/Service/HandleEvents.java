@@ -1,6 +1,7 @@
 package com.wassimlagnaoui.ecommerce.order_service.Service;
 
 
+import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentRefunded;
 import com.wassimlagnaoui.common_events.KafkaGroupIds;
@@ -51,6 +52,16 @@ public class HandleEvents {
         orderRepository.save(order);
 
         log.info("Order with id: {} updated to Canceled status after payment refunded event", order.getId());
+    }
+
+    // Handle payment failed event
+    @KafkaListener(topics = KafkaTopics.PAYMENT_FAILED, groupId = KafkaGroupIds.ORDER_SERVICE_GROUP)
+    public void handlePaymentFailed(PaymentFailed paymentFailed) {
+        Order order = orderRepository.findById(paymentFailed.getOrderId()).orElseThrow(()-> new OrderNotFound("Order not found with id: " + paymentFailed.getOrderId()+" for payment failed event"));
+        order.setStatus(OrderStatus.CANCELED);
+        orderRepository.save(order);
+        log.info("Order with id: {} updated to CANCELED status after payment failed event", order.getId());
+
     }
 
 
