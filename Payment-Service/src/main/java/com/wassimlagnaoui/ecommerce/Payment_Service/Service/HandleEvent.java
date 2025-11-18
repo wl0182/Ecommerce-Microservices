@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.Payment_Service.Service;
 
 
 import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
+import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
 import com.wassimlagnaoui.common_events.KafkaGroupIds;
 import com.wassimlagnaoui.common_events.KafkaTopics;
@@ -16,6 +17,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -57,6 +59,15 @@ public class HandleEvent {
         Payment savedPayment = paymentRepository.save(payment);
 
         // publish payment failed event
+        PaymentFailed paymentFailed = new PaymentFailed();
+        paymentFailed.setPaymentId(savedPayment.getId().toString());
+        paymentFailed.setOrderId(payment.getOrderId());
+        paymentFailed.setUserId(orderCreateEvent.getUserId().toString());
+        paymentFailed.setAmount(BigDecimal.valueOf(payment.getAmount()));
+        paymentFailed.setFailedAt(java.time.Instant.now());
+        kafkaPublisher.publish(KafkaTopics.PAYMENT_FAILED, paymentFailed);
+
+
 
         return ProcessPaymentResponse.builder()
                 .id(savedPayment.getId())
