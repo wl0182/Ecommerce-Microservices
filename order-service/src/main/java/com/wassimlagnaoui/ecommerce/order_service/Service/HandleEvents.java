@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.order_service.Service;
 
 
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
+import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentRefunded;
 import com.wassimlagnaoui.common_events.KafkaGroupIds;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.Order;
@@ -25,6 +26,13 @@ public class HandleEvents {
         this.orderItemRepository = orderItemRepository;
     }
 
+    /*
+    #### Service Methods Triggered by Kafka Events
+- On payment-processed (C): Update order status to PAID
+- On payment-refunded (C): Update order status to REFUNDED
+- On payment-failed (C): Update order status to PAYMENT_FAILED
+     */
+
 
     @KafkaListener(topics = KafkaTopics.PAYMENT_PROCESSED, groupId = KafkaGroupIds.ORDER_SERVICE_GROUP)
     public void handlePaymentProcessed(PaymentProcessed paymentProcessed) {
@@ -33,6 +41,16 @@ public class HandleEvents {
         orderRepository.save(order);
 
         log.info("Order with id: {} updated to PAID status after payment processed event", order.getId());
+    }
+
+
+    @KafkaListener(topics = KafkaTopics.PAYMENT_REFUNDED, groupId = KafkaGroupIds.ORDER_SERVICE_GROUP)
+    public void handlePaymentRefund(PaymentRefunded paymentRefunded){
+        Order order = orderRepository.findById(paymentRefunded.getOrderId()).orElseThrow(()-> new OrderNotFound("Order not found with id: " + paymentRefunded.getOrderId()+" for payment refunded event"));
+        order.setStatus(OrderStatus.REFUNDED); // assuming refunded orders are marked as CANCELED
+        orderRepository.save(order);
+
+        log.info("Order with id: {} updated to Canceled status after payment refunded event", order.getId());
     }
 
 
