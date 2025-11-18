@@ -18,5 +18,7 @@ public class ProductUpdatedEvent extends BaseEvent {
     private String name;
     private BigDecimal price;
     private int stockQuantity;
+    private String sku;
     private String updatedAt;
+    private String categoryId;
 } // { productId, name, price, stockQuantity, updatedAt }

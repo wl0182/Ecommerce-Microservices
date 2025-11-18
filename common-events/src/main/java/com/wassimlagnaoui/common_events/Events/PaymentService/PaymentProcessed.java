@@ -14,7 +14,7 @@ import java.time.Instant;
 public class PaymentProcessed {
     private String paymentId;
     private Long orderId;
-    private Long userId;
+    private String userId;
     private double amount;
     private String status;
     private String paymentMethod;
