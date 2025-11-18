@@ -1,12 +1,13 @@
 package com.wassimlagnaoui.ecommerce.Payment_Service.Controller;
 
+import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.IssueRefundRequest;
+import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.IssueRefundResponse;
 import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.PaymentDTO;
 import com.wassimlagnaoui.ecommerce.Payment_Service.Service.PaymentService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -27,9 +28,17 @@ public class PaymentController {
 
     // Get Payment by Order Id
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<java.util.List<PaymentDTO>> getPaymentsByOrderId(@PathVariable Long orderId) {
+    public ResponseEntity<List<PaymentDTO>> getPaymentsByOrderId(@PathVariable Long orderId) {
         java.util.List<PaymentDTO> paymentDTOs = paymentService.getPaymentsByOrderId(orderId);
         return ResponseEntity.ok(paymentDTOs);
     }
+
+    // Issue refund for a payment
+    @PostMapping("/refund")
+    public ResponseEntity<IssueRefundResponse> issueRefund(IssueRefundRequest request) {
+        IssueRefundResponse response = paymentService.issueRefund(request);
+        return ResponseEntity.ok(response);
+    }
+
 
 }
