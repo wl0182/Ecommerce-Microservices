@@ -25,7 +25,8 @@ public final class KafkaTopics {
 
     // ----------------- PAYMENT SERVICE -----------------
     public static final String PAYMENT_PROCESSED = "payment-processed"; // Produced by Payment-Service; Consumed by Order & Notification Services
-    public static final String PAYMENT_REFUNDED = "payment-refunded";   // Produced by Payment-Service; Consumed by Order & Notification Services
+    public static final String PAYMENT_REFUNDED = "payment-refunded";// Produced by Payment-Service; Consumed by Order & Notification Services
+    public static final String PAYMENT_FAILED = "payment-failed";         // Produced by Payment-Service; Consumed by Order & Notification Services
 
     // ----------------- SHIPPING SERVICE -----------------
     public static final String SHIPMENT_CREATED = "shipment-created"; // Produced by Shipping-Service; Consumed by Notification-Service
