@@ -1,5 +1,7 @@
 package com.wassimlagnaoui.ecommerce.Shipping_Service.Service;
 
+import com.wassimlagnaoui.common_events.Events.ShippingService.ShipmentUpdatedEvent;
+import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.DTO.ShipmentDTO;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.DTO.UpdateStatusRequest;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.DTO.UpdateStatusResponse;
@@ -8,14 +10,22 @@ import com.wassimlagnaoui.ecommerce.Shipping_Service.Domain.ShipmentStatus;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.Exception.ShipmentNotFoundException;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.Exception.ShipmentStatusInvalid;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.Repository.ShipmentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
 public class ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
+
+    @Autowired
+    private KafkaPublisher kafkaPublisher;
 
     public ShipmentService(ShipmentRepository shipmentRepository) {
         this.shipmentRepository = shipmentRepository;
@@ -53,13 +63,8 @@ public class ShipmentService {
                 .build();
     }
 
-    /*
-    #### PUT /shipments/{id}/update-status
-- Name & Purpose : Update shipment status
-- Payload: { status }
-- Response : { id, orderId, trackingNumber, status, updatedAt }
-- Comm with Other Service : Kafka event (shipment.updated) P
-     */
+
+    @Transactional(rollbackForClassName = "ShipmentStatusInvalid")
     public UpdateStatusResponse updateShipmentStatus(UpdateStatusRequest request, Long id) {
        Shipment shipment = shipmentRepository.findById(id)
                .orElseThrow(() -> new ShipmentNotFoundException("Shipment not found with id: " + id));
@@ -76,7 +81,21 @@ public class ShipmentService {
          shipmentRepository.save(shipment);
 
        // publish Kafka event shipment.updated
+        ShipmentUpdatedEvent event = ShipmentUpdatedEvent.builder()
+                .shipmentId(shipment.getId())
+                .orderId(shipment.getOrderId())
+                .trackingNumber(shipment.getTrackingNumber())
+                .status(request.getStatus())
+                .updatedAt(Instant.now())
+                .build();
 
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                kafkaPublisher.publish(KafkaTopics.SHIPMENT_UPDATED, event);
+            }
+        });
 
 
 
@@ -87,6 +106,7 @@ public class ShipmentService {
                 .trackingNumber(shipment.getTrackingNumber())
                 .status(shipment.getStatus().name())
                 .build();
+
     }
 
 
