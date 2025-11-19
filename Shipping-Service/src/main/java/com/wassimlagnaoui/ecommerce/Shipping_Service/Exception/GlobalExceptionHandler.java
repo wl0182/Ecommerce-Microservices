@@ -20,4 +20,14 @@ public class GlobalExceptionHandler {
         errorResponse.put("Info", "Shipment not found in the system");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
+
+    @ExceptionHandler(ShipmentStatusInvalid.class)
+    public ResponseEntity<HashMap<String, String>> handleShipmentStatusInvalidException(ShipmentStatusInvalid ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.toString());
+        errorResponse.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        errorResponse.put("Info", "The provided shipment status is invalid");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 }
