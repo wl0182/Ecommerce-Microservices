@@ -8,6 +8,7 @@ import com.wassimlagnaoui.ecommerce.user_service.Exceptions.UserNotFoundExceptio
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
 import com.wassimlagnaoui.ecommerce.user_service.Model.User;
 import com.wassimlagnaoui.ecommerce.user_service.Repository.UserRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,6 +145,14 @@ public class UserService {
 
         return new AddressDTO(savedAddress.getId(), savedAddress.getStreet(), savedAddress.getCity(), savedAddress.getZip(), savedAddress.getCountry(), savedAddress.isDefault());
 
+    }
+
+
+    @CircuitBreaker(name = "shi", fallbackMethod = "addressValidationFallback")
+    public Boolean validateAddress(Long userId, Long addressId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+        return user.getAddresses().stream().anyMatch(address -> address.getId().equals(addressId));
     }
 
 

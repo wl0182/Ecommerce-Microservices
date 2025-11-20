@@ -70,6 +70,13 @@ public class UserController {
         return ResponseEntity.ok(addressDTO);
     }
 
+    // validate address
+    @GetMapping("/{userId}/addresses/{addressId}/validate")
+    public ResponseEntity<Boolean> validateAddress(@PathVariable Long userId, @PathVariable Long addressId) {
+        Boolean isValid = userService.validateAddress(userId, addressId);
+        return ResponseEntity.ok(isValid);
+    }
+
 
 
 
