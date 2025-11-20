@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ShipmentDTO {
+    private Long ShipmentId;
     private Long orderId;
     private String carrier;
     private String trackingNumber;
