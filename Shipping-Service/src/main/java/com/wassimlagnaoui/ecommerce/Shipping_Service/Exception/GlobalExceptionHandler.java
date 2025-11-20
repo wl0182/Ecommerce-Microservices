@@ -30,4 +30,15 @@ public class GlobalExceptionHandler {
         errorResponse.put("Info", "The provided shipment status is invalid");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+    // InvalidAddressValidation exception handler
+    @ExceptionHandler(InvalidAddressValidation.class)
+    public ResponseEntity<HashMap<String, String>> handleInvalidAddressValidationException(InvalidAddressValidation ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
+        errorResponse.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        errorResponse.put("Info", "The provided address is invalid");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
 }
