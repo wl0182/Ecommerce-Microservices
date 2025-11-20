@@ -34,7 +34,7 @@ resilience4j:
   # Circuit Breaker configuration to prevent cascading failures
   circuitbreaker:
     instances:
-      shipping-service:
+      userServiceCircuitBreaker: # It has to be the same name as used in @CircuitBreaker annotation
         # Minimum number of calls before circuit breaker can trip
         minimum-number-of-calls: 5
         # Failure rate threshold to open circuit (50%)
@@ -48,36 +48,7 @@ resilience4j:
         # Percentage of slow calls that will trip the circuit
         slow-call-rate-threshold: 50
 
-  # Retry configuration for transient failures
-  retry:
-    instances:
-      cart-service:
-        # Maximum number of retry attempts
-        max-attempts: 3
-        # Wait time between retries
-        wait-duration: 1s
-        # Exponential backoff multiplier
-        exponential-backoff-multiplier: 2
 
-  # Rate Limiter configuration to control request rate
-  ratelimiter:
-    instances:
-      cart-service:
-        # Number of permits available per refresh period
-        limit-for-period: 10
-        # Time period for the limit
-        limit-refresh-period: 1s
-        # Time a thread waits for permission
-        timeout-duration: 3s
-
-  # Bulkhead configuration to isolate resources
-  bulkhead:
-    instances:
-      cart-service:
-        # Maximum number of concurrent calls
-        max-concurrent-calls: 5
-        # Maximum time to wait for a permit
-        max-wait-duration: 1s
 
 
 server:
@@ -88,3 +59,13 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+
+# Services URLs :
+services:
+  product-service:
+    url: http://PRODUCT-SERVICE
+  payment-service:
+    url: http://PAYMENT-SERVICE
+  user-service:
+    url: http://USER-SERVICE
