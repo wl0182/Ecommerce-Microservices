@@ -28,5 +28,5 @@ public class Shipment {
     private String actualDelivery;
     private String createdAt;
 
-}
+} // JSON : { id, orderId, carrier, trackingNumber, status, estimatedDelivery, actualDelivery, createdAt }
 
