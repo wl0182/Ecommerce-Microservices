@@ -140,10 +140,57 @@ public class OrderService {
     }
 
 
-
+    @Transactional(readOnly = true)
     public OrderDTO getOrderById(Long orderId) {
+        Order order = orderRepository.findOrderWithItems(orderId).orElseThrow(() -> new OrderNotFound("Order with id " + orderId + " not found"));
 
-        return null;
+        List<OrderItem> orderItems = order.getOrderItems();
+        // get product ids from order items
+        List<Long> productIds = orderItems.stream()
+                .map(OrderItem::getProductId)
+                .distinct() // avoid duplicate ids
+                .collect(Collectors.toList());
+
+
+        // get product details by list of ids
+        List<ProductDTO> products = getProductsByIds(productIds);
+        HashMap<Long, ProductDTO> productMap = mapProductsById(products);
+
+
+        // create order item responses with product names
+        List<OrderItemResponse> items = new ArrayList<>();
+
+        items = orderItems.stream().map(oi -> {
+            ProductDTO product = productMap.get(oi.getProductId());
+            return OrderItemResponse.builder()
+                    .productId(oi.getProductId())
+                    .productName(product != null ? product.getName() : "Unknown Product")
+                    .quantity(oi.getQuantity())
+                    .price(oi.getPrice())
+                    .productDescription(product != null ? product.getDescription() : "No description available")
+                    .productCategory(product != null ? product.getCategoryName() : "Uncategorized")
+                    .build();
+        }).collect(Collectors.toList());
+
+        // build and return OrderDTO
+
+        Double totalAmount = orderItems.stream()
+                .mapToDouble(oi -> oi.getPrice().doubleValue() * oi.getQuantity())
+                .sum();
+
+        // round totalAmount to 2 decimal places
+        totalAmount = Math.round(totalAmount * 100.0) / 100.0;
+
+        return OrderDTO.builder()
+                .id(order.getId())
+                .userId(order.getUserId())
+                .items(items)
+                .totalAmount(totalAmount)
+                .status(order.getStatus().name())
+                .createdAt(order.getOrderDate())
+                .updatedAt(order.getLastUpdated())
+                .build();
+        // { id, userId, items:[{ productId, name, quantity, price }], totalAmount, status, createdAt, updatedAt }
     } 
     
     // get orders by user id Alternative implementation without Product Name
