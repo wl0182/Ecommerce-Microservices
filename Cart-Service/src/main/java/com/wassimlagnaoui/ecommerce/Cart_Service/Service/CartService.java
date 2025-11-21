@@ -261,7 +261,7 @@ public class CartService {
         CheckoutResponse checkoutResponse = new CheckoutResponse();
         checkoutResponse.setOrderId(orderCreatedResponse.getId());
         checkoutResponse.setStatus(orderCreatedResponse.getStatus());
-        checkoutResponse.setTotalAmount(BigDecimal.valueOf(orderCreatedResponse.getTotalAmount()));
+        checkoutResponse.setTotalAmount(orderCreatedResponse.getTotalAmount());
         checkoutResponse.setCreatedAt(orderCreatedResponse.getCreatedAt());
         checkoutResponse.setUserId(userId);
 
@@ -274,7 +274,8 @@ public class CartService {
     public OrderCreatedResponse createOrder(CreateOrderDTO createOrderDTO) {
         ResponseEntity<OrderCreatedResponse> response = restTemplate.postForEntity(orderServiceUrl + "/api/orders/place-order", createOrderDTO, OrderCreatedResponse.class);
 
-
+        log.info("Order Service response status: " + response.getStatusCode());
+        log.info("Order Service response body: " + response.getBody());
 
         return response.getBody();
     }

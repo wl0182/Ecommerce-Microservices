@@ -16,7 +16,7 @@ public class CheckoutResponse {
     private Long userId;
     private Long orderId;
     private String status;
-    private BigDecimal totalAmount;
+    private Double totalAmount;
     private String createdAt;
 
 } // { userId ,orderId, status, totalAmount, createdAt }
