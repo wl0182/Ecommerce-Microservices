@@ -16,7 +16,7 @@ public class OrderDTO {
     private Long id;
     private Long userId;
     private List<OrderItemResponse> items;
-    private double totalAmount;
+    private Double totalAmount;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
