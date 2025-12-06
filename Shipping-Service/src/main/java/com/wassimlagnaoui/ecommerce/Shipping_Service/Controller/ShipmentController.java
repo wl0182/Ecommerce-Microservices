@@ -14,23 +14,22 @@ public class ShipmentController {
 
     public ShipmentController(ShipmentService shipmentService) {
         this.shipmentService = shipmentService;
-
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ShipmentDTO> getShipmentById(Long id) {
+    public ResponseEntity<ShipmentDTO> getShipmentById(@PathVariable Long id) {
         ShipmentDTO shipmentDTO = shipmentService.getShipmentById(id);
         return ResponseEntity.ok(shipmentDTO);
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<ShipmentDTO> getShipmentByOrderId(Long orderId) {
+    public ResponseEntity<ShipmentDTO> getShipmentByOrderId(@PathVariable Long orderId) {
         ShipmentDTO shipmentDTO = shipmentService.getShipmentByOrderId(orderId);
         return ResponseEntity.ok(shipmentDTO);
     }
 
     // ship order
-    @GetMapping("/ship/order/{orderId}")
+    @PostMapping("/ship/order/{orderId}")
     public ResponseEntity<ShipmentDTO> shipOrder(@PathVariable Long orderId, @RequestBody ShipRequest shipRequest) {
         ShipmentDTO shipmentDTO = shipmentService.shipOrder(orderId, shipRequest);
         return ResponseEntity.ok(shipmentDTO);
