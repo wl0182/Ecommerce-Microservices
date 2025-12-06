@@ -1,7 +1,7 @@
 package com.wassimlagnaoui.ecommerce.Shipping_Service.Domain;
 
 public enum ShipmentStatus {
-    PENDING,
+    CREATED,
     SHIPPED,
     IN_TRANSIT,
     DELIVERED,
