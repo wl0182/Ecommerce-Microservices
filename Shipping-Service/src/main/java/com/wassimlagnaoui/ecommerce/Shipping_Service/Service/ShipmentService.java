@@ -47,9 +47,9 @@ public class ShipmentService {
     }
 
     public ShipmentDTO getShipmentById(Long id) {
-       Shipment shipment =shipmentRepository.findById(id).orElseThrow(() -> new ShipmentNotFoundException("Shipment not found with id: " + id));
+        Shipment shipment = shipmentRepository.findById(id).orElseThrow(() -> new ShipmentNotFoundException("Shipment not found with id: " + id));
 
-         return ShipmentDTO.builder()
+        return ShipmentDTO.builder()
                 .orderId(shipment.getOrderId())
                 .carrier(shipment.getCarrier())
                 .trackingNumber(shipment.getTrackingNumber())
@@ -81,21 +81,20 @@ public class ShipmentService {
 
     @Transactional(rollbackForClassName = "ShipmentStatusInvalid")
     public UpdateStatusResponse updateShipmentStatus(UpdateStatusRequest request, Long id) {
-       Shipment shipment = shipmentRepository.findById(id)
-               .orElseThrow(() -> new ShipmentNotFoundException("Shipment not found with id: " + id));
+        Shipment shipment = shipmentRepository.findById(id)
+                .orElseThrow(() -> new ShipmentNotFoundException("Shipment not found with id: " + id));
 
 
-       try {
-           shipment.setStatus(ShipmentStatus.valueOf(request.getStatus()));
-       } catch (IllegalArgumentException e) {
-              throw new ShipmentStatusInvalid("Invalid status value: " + request.getStatus());
-       }
+        try {
+            shipment.setStatus(ShipmentStatus.valueOf(request.getStatus()));
+        } catch (IllegalArgumentException e) {
+            throw new ShipmentStatusInvalid("Invalid status value: " + request.getStatus());
+        }
 
 
+        shipmentRepository.save(shipment);
 
-         shipmentRepository.save(shipment);
-
-       // publish Kafka event shipment.updated
+        // publish Kafka event shipment.updated
         ShipmentUpdatedEvent event = ShipmentUpdatedEvent.builder()
                 .shipmentId(shipment.getId())
                 .orderId(shipment.getOrderId())
@@ -111,7 +110,6 @@ public class ShipmentService {
                 kafkaPublisher.publish(KafkaTopics.SHIPMENT_UPDATED, event);
             }
         });
-
 
 
         return UpdateStatusResponse.builder()
@@ -134,7 +132,7 @@ public class ShipmentService {
         shipment.setOrderId(orderPaidEvent.getOrderId());
         shipment.setCarrier("DHL"); // for example
         shipment.setTrackingNumber("TRACK" + orderPaidEvent.getOrderId() + System.currentTimeMillis());
-        shipment.setStatus(ShipmentStatus.PENDING);
+        shipment.setStatus(ShipmentStatus.CREATED);
         shipment.setEstimatedDelivery(LocalDateTime.now().plusDays(5).toString());
         shipment.setCreatedAt(LocalDateTime.now().toString());
 
@@ -153,12 +151,11 @@ public class ShipmentService {
     }
 
 
-
     @Transactional
-    public ShipmentDTO shipOrder(Long orderId,ShipRequest shipRequest){
+    public ShipmentDTO shipOrder(Long orderId, ShipRequest shipRequest) {
         // Validate User and Address via REST call to User-Service
         Boolean isValidAddress = validateAddress(shipRequest.getUserId(), shipRequest.getAddressId());
-        if(!isValidAddress){
+        if (!isValidAddress) {
             throw new InvalidAddressValidation("Invalid Address  " + shipRequest.getUserId() + ", addressId: " + shipRequest.getAddressId());
 
         }
@@ -187,7 +184,6 @@ public class ShipmentService {
         });
 
 
-
         // return ShipmentDTO
         return ShipmentDTO.builder()
                 .ShipmentId(shipment.getId())
@@ -205,31 +201,22 @@ public class ShipmentService {
 
 
     @CircuitBreaker(name = "userServiceCircuitBreaker", fallbackMethod = "validateAddressFallback")
-    public Boolean validateAddress(Long userId, Long addressId){
+    public Boolean validateAddress(Long userId, Long addressId) {
         // REST call to User-Service to validate address
         String url = userServiceUrl + "/users/" + userId + "/addresses/" + addressId + "/validate";
         Boolean isValid = restTemplate.getForObject(url, Boolean.class);
-        if(isValid != null){
+        if (isValid != null) {
             return isValid;
         }
         return false;
     }
 
     // Fallback method for Circuit Breaker
-    public Boolean validateAddressFallback(Long userId, Long addressId, Throwable throwable){
+    public Boolean validateAddressFallback(Long userId, Long addressId, Throwable throwable) {
         // In case of failure, we assume the address is invalid
         log.info("Fallback: Unable to validate address for userId: " + userId + ", addressId: " + addressId + ". Error: " + throwable.getMessage());
         return false;
     }
-
-
-
-
-
-
-
-
-
 
 
 }
