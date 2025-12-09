@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -18,6 +19,9 @@ public class Cart {
     @Id @GeneratedValue
     private Long id;
     private Long userId;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true ,fetch = FetchType.EAGER)
     private List<CartItem> cartItems;
