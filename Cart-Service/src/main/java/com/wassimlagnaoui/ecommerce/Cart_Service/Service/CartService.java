@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -148,6 +149,8 @@ public class CartService {
         Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setUserId(userId);
+            newCart.setCreatedAt(LocalDateTime.now());
+            newCart.setUpdatedAt(LocalDateTime.now());
             return cartRepository.save(newCart);
         });
         // check if product already exists in cart
@@ -192,6 +195,7 @@ public class CartService {
 
         // delete cart item fron cart and then cart_items table
         cart.getCartItems().remove(cartItem);
+        cart.setUpdatedAt(LocalDateTime.now());
 
 
         // cartItemRepository.delete(cartItem) did not work as expected here for unknown reasons
@@ -294,6 +298,16 @@ public class CartService {
 
 
 
+
+    public void cleanupOldCarts() {
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(1);
+        List<Cart> oldCarts = cartRepository.findByUpdatedAtBefore(cutoffTime);
+        for (Cart cart : oldCarts) {
+            log.info("Cleaning up cart with ID: " + cart.getId() + " for user ID: " + cart.getUserId());
+            cartRepository.delete(cart);
+        }
+
+    }
 
 
 
