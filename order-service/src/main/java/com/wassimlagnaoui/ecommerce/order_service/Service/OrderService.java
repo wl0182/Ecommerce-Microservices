@@ -360,4 +360,22 @@ public class OrderService {
     }
 
 
+    // update order status manually
+    public OrderDTO updateOrderStatus(long orderId, OrderStatusDTO orderStatusDTO){
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFound("Order with id " + orderId + " not found"));
+        order.setStatus(OrderStatus.valueOf(orderStatusDTO.getStatus()));
+        order.setLastUpdated(LocalDateTime.now());
+        Order updatedOrder = orderRepository.save(order);
+
+        return OrderDTO.builder()
+                .id(updatedOrder.getId())
+                .userId(updatedOrder.getUserId())
+                .totalAmount(updatedOrder.getTotalAmount())
+                .status(updatedOrder.getStatus().name())
+                .createdAt(updatedOrder.getOrderDate())
+                .updatedAt(updatedOrder.getLastUpdated())
+                .build();
+    }
+
+
 }
