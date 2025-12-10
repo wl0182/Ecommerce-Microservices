@@ -6,6 +6,7 @@ import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentRefunded;
 import com.wassimlagnaoui.common_events.Events.ShippingService.ShipmentCreatedEvent;
+import com.wassimlagnaoui.common_events.Events.ShippingService.ShipmentUpdatedEvent;
 import com.wassimlagnaoui.common_events.KafkaGroupIds;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.Order;
@@ -100,6 +101,18 @@ public class HandleEvents {
         orderRepository.save(order);
         log.info("Order with id: {} updated to SHIPPED status after shipment created event", order.getId());
     }
+
+
+    // Handle shipment updated event
+    @KafkaListener(topics = KafkaTopics.SHIPMENT_UPDATED,groupId = KafkaGroupIds.ORDER_SERVICE_GROUP)
+    public void handShipmentUpdated(ShipmentUpdatedEvent shipmentUpdatedEvent){
+        Order order = orderRepository.findById(shipmentUpdatedEvent.getOrderId()).orElseThrow(()-> new OrderNotFound("Order not found with id: " + shipmentUpdatedEvent.getOrderId()+" for shipment updated event"));
+        order.setStatus(OrderStatus.valueOf(shipmentUpdatedEvent.getStatus()));
+        orderRepository.save(order);
+        log.info("Order with id: {} updated to {} status after shipment updated event", order.getId(),shipmentUpdatedEvent.getStatus());
+    }
+
+
 
 
 
