@@ -13,6 +13,9 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +23,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 
+import java.awt.print.Pageable;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -375,6 +379,22 @@ public class OrderService {
                 .createdAt(updatedOrder.getOrderDate())
                 .updatedAt(updatedOrder.getLastUpdated())
                 .build();
+    }
+
+    // Get All orders Paginated
+    public Page<OrderDTO> getAllOrders(int page, int size){
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
+        Page<Order> ordersPage = orderRepository.findAll(pageable);
+
+        return ordersPage.map(order -> OrderDTO.builder()
+                .id(order.getId())
+                .userId(order.getUserId())
+                .totalAmount(order.getTotalAmount())
+                .status(order.getStatus().name())
+                .createdAt(order.getOrderDate())
+                .updatedAt(order.getLastUpdated())
+                .build());
+
     }
 
 
