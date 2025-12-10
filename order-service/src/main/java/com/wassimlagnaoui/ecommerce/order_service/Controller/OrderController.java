@@ -4,6 +4,7 @@ package com.wassimlagnaoui.ecommerce.order_service.Controller;
 import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.order_service.Service.OrderService;
 import jakarta.ws.rs.PathParam;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -73,6 +74,16 @@ public class OrderController {
     public ResponseEntity<OrderDTO> updateOrderStatus(@PathVariable("orderId") Long orderId, @RequestBody OrderStatusDTO status) {
         OrderDTO updatedStatus = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(updatedStatus);
+    }
+
+
+    // get all orders
+    @GetMapping("/all")
+    public ResponseEntity<Page<OrderDTO>> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        Page<OrderDTO> orders = orderService.getAllOrders(page, size);
+        return ResponseEntity.ok(orders);
     }
 
 
