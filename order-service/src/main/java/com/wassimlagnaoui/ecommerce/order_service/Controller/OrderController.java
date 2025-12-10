@@ -68,6 +68,13 @@ public class OrderController {
     }
 
 
+    // Update Order Status manually (for testing purposes)
+    @PutMapping("/{orderId}/update-status")
+    public ResponseEntity<OrderDTO> updateOrderStatus(@PathVariable("orderId") Long orderId, @RequestBody OrderStatusDTO status) {
+        OrderDTO updatedStatus = orderService.updateOrderStatus(orderId, status);
+        return ResponseEntity.ok(updatedStatus);
+    }
+
 
 
 
