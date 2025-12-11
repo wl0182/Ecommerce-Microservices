@@ -1,10 +1,12 @@
 package com.wassimlagnaoui.ecommerce.order_service.DTO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,7 +18,9 @@ public class OrderDTO {
     private Long id;
     private Long userId;
     private List<OrderItemResponse> items;
-    private Double totalAmount;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private BigDecimal totalAmount;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
