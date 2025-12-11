@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import java.awt.print.Pageable;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,7 +66,7 @@ public class OrderService {
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         order.setLastUpdated(LocalDateTime.now());
-        double totalAmount = 0.0;
+        BigDecimal totalAmount = BigDecimal.ZERO;
 
         // get Product ids from createOrderDTO
         List<Long> productIds = extractProductIds(createOrderDTO.getItems());
@@ -88,7 +89,8 @@ public class OrderService {
             orderItem.setOrder(order);
 
             orderItems.add(orderItem);
-            totalAmount += product.getPrice() * itemRequest.getQuantity();
+            // calculate total amount
+            totalAmount = totalAmount.add(orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())));
         }
 
         order.setOrderItems(orderItems);
@@ -113,7 +115,7 @@ public class OrderService {
         OrderCreateEvent orderCreateEvent = OrderCreateEvent.builder()
                 .orderId(String.valueOf(savedOrder.getId()))
                 .userId(String.valueOf(savedOrder.getUserId()))
-                .totalAmount(savedOrder.getTotalAmount())
+                .totalAmount(savedOrder.getTotalAmount().doubleValue())
                 .paymentMethod(createOrderDTO.getPaymentMethod())
                 .items(orderItems.stream().map(oi -> OrderCreateEvent.Item.builder()
                         .productId(String.valueOf(oi.getProductId()))
@@ -137,7 +139,7 @@ public class OrderService {
                 .id(savedOrder.getId())
                 .userId(savedOrder.getUserId())
                 .items(itemResponses)
-                .totalAmount(savedOrder.getTotalAmount())
+                .totalAmount(savedOrder.getTotalAmount().doubleValue())
                 .status(savedOrder.getStatus().name())
                 .createdAt(savedOrder.getOrderDate().toString())
                 .build(); // { id, userId, items:[{ productId, name, quantity, price }], totalAmount, status, createdAt, updatedAt }
@@ -178,12 +180,13 @@ public class OrderService {
 
         // build and return OrderDTO
 
-        Double totalAmount = orderItems.stream()
-                .mapToDouble(oi -> oi.getPrice().doubleValue() * oi.getQuantity())
-                .sum();
+        BigDecimal totalAmount = orderItems.stream()
+                .map(oi -> oi.getPrice()
+                        .multiply(BigDecimal.valueOf(oi.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
 
-        // round totalAmount to 2 decimal places
-        totalAmount = Math.round(totalAmount * 100.0) / 100.0;
+
 
         return OrderDTO.builder()
                 .id(order.getId())
@@ -203,7 +206,7 @@ public class OrderService {
         return orders.stream().map(order -> {
             OrdersForUserResponse response = new OrdersForUserResponse();
             response.setId(order.getId());
-            response.setTotalAmount(order.getTotalAmount());
+            response.setTotalAmount(order.getTotalAmount().doubleValue());
             response.setStatus(order.getStatus().name());
             response.setCreatedAt(order.getOrderDate().toString());
             return response;
