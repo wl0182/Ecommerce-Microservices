@@ -36,4 +36,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Object[]> findTop5OrderedProducts();
 
 
+    @Query("SELECT o FROM Order o WHERE o.status = :status")
+    List<Order> findByStatus(String status);
+
+
 }

@@ -400,5 +400,22 @@ public class OrderService {
 
     }
 
+    public List<OrderDTO> findOrderByStatus(String status){
+        List<Order> orders = orderRepository.findByStatus(status);
+
+        if (orders.isEmpty()){
+            throw new OrderNotFound("No orders found with status " + status);
+        }
+
+        return orders.stream().map(order -> OrderDTO.builder()
+                .id(order.getId())
+                .userId(order.getUserId())
+                .totalAmount(order.getTotalAmount())
+                .status(order.getStatus().name())
+                .createdAt(order.getOrderDate())
+                .updatedAt(order.getLastUpdated())
+                .build()).toList();
+    }
+
 
 }
