@@ -86,6 +86,12 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    @GetMapping("/status")
+    public ResponseEntity<List<OrderDTO>> getOrdersByStatus(@RequestParam("status") String status) {
+        List<OrderDTO> orders = orderService.findOrderByStatus(status);
+        return ResponseEntity.ok(orders);
+    }
+
 
 
 
