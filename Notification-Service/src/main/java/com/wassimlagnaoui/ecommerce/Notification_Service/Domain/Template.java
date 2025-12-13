@@ -12,10 +12,20 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "templates")
 public class Template {
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Enumerated(EnumType.STRING)
-    private NotificationType type; // ORDER_CONFIRMED, PAYMENT_SUCCESS, DELIVERED
+    private NotificationType type;
+
     private String subject;
-    private String body;
-}// Template → { id, type, subject, body }
+
+
+    @Column(columnDefinition = "TEXT")
+    private String body; // html content with placeholders for dynamic data
+}
+
+
+
+
+

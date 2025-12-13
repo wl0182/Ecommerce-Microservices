@@ -1,6 +1,7 @@
 package com.wassimlagnaoui.ecommerce.Notification_Service.Service;
 
 
+import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
 import com.wassimlagnaoui.ecommerce.Notification_Service.DTO.TemplateRequest;
 import com.wassimlagnaoui.ecommerce.Notification_Service.DTO.TemplateResponse;
 import com.wassimlagnaoui.ecommerce.Notification_Service.Domain.NotificationType;
@@ -8,8 +9,11 @@ import com.wassimlagnaoui.ecommerce.Notification_Service.Domain.Template;
 import com.wassimlagnaoui.ecommerce.Notification_Service.Exception.InvalidNotificationType;
 import com.wassimlagnaoui.ecommerce.Notification_Service.Exception.TemplateNotFound;
 import com.wassimlagnaoui.ecommerce.Notification_Service.Repository.TemplateRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 @Service
 public class TemplateService {
@@ -18,6 +22,9 @@ public class TemplateService {
     public TemplateService(TemplateRepository templateRepository) {
         this.templateRepository = templateRepository;
     }
+
+    @Autowired
+    private TemplateEngine templateEngine;
 
     // get Template by id
     @Transactional(readOnly = true)
@@ -86,6 +93,33 @@ public class TemplateService {
                 .body(updatedTemplate.getBody())
                 .build();
     }
+
+    // fetch template from Templates directory under resources
+    public String renderUserRegisteredTemplate(String userName) {
+        // simple replacement of {{userName}} with actual userName using Thymeleaf
+        Context context = new Context();
+        context.setVariable("userName", userName); // set the userName variable in the context
+        return templateEngine.process("User-Registered", context);
+    }
+
+
+
+    public String renderOrderCreatedTemplate(OrderCreateEvent order) {
+
+        Context context = new Context();
+        context.setVariable("orderId", order.getOrderId()); // set the orderId variable in the context
+        context.setVariable("totalAmount", order.getTotalAmount());
+        context.setVariable("createdAt", order.getCreatedAt());
+        context.setVariable("paymentMethod", order.getPaymentMethod());
+        context.setVariable("items", order.getItems());
+
+        return templateEngine.process("Order-Created", context);
+    }
+
+
+
+
+
 
 
 }

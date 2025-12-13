@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "notifications")
 public class Notification {
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long userId;
 
     @Enumerated(EnumType.STRING)
-    private NotificationType type; // ORDER_CONFIRMED, PAYMENT_SUCCESS, DELIVERED
+    private NotificationType type; // ORDER_CONFIRMED, PAYMENT_SUCCESS, DELIVERED, USER_REGISTRATION
 
     @Enumerated(EnumType.STRING)
     private NotificationChannel channel; // EMAIL, SMS
