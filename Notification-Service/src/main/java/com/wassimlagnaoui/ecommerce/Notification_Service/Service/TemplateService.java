@@ -2,6 +2,8 @@ package com.wassimlagnaoui.ecommerce.Notification_Service.Service;
 
 
 import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
+import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
+import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
 import com.wassimlagnaoui.ecommerce.Notification_Service.DTO.TemplateRequest;
 import com.wassimlagnaoui.ecommerce.Notification_Service.DTO.TemplateResponse;
 import com.wassimlagnaoui.ecommerce.Notification_Service.Domain.NotificationType;
@@ -115,6 +117,40 @@ public class TemplateService {
 
         return templateEngine.process("Order-Created", context);
     }
+
+    // render payment processed template
+    // paymentId, orderId, paymentMethod, status, createdAt
+    public String renderPaymentProcessedTemplate(PaymentProcessed paymentProcessed) {
+        Context context = new Context();
+
+        context.setVariable("paymentId", paymentProcessed.getPaymentId());
+        context.setVariable("orderId", paymentProcessed.getOrderId());
+        context.setVariable("paymentMethod", paymentProcessed.getPaymentMethod());
+        context.setVariable("status", paymentProcessed.getStatus());
+        context.setVariable("createdAt", paymentProcessed.getCreatedAt());
+
+
+        return templateEngine.process("Payment-Processed", context);
+    }
+
+
+
+    // render Payment Failed template
+    // Variables to be used: paymentId, orderId, amount, failedAt
+    public String renderPaymentFailedTemplate(PaymentFailed paymentFailed) {
+        Context context = new Context();
+        // Add variables to the context as needed
+        context.setVariable("paymentId", paymentFailed.getPaymentId());
+        context.setVariable("orderId", paymentFailed.getOrderId());
+        context.setVariable("amount", paymentFailed.getAmount());
+        context.setVariable("failedAt", paymentFailed.getFailedAt());
+
+
+        return templateEngine.process("Payment-Failed", context);
+    }
+
+
+
 
 
 
