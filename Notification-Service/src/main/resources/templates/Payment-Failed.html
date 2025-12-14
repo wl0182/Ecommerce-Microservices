@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Failed</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #594949; margin: 0; padding: 20px; color: #594949;">
+    <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <h2 style="color:#dc3545;">Payment Processing Failed</h2>
+        <p>We were unable to process your payment. Please review the details below and try again.</p>
+
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color:#333; margin-top: 0;">Payment Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; width: 40%;">Payment ID:</td>
+                    <td style="padding: 8px 0;" th:text="${paymentId}">PAY-123456</td>
+
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Order ID:</td>
+                    <td style="padding: 8px 0;" th:text="${orderId}">ORD-123</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Amount:</td>
+                    <td style="padding: 8px 0; color: #dc3545; font-size: 18px; font-weight: bold;"
+                        th:text="${'$' + #numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Status:</td>
+                    <td style="padding: 8px 0;">
+                        <span style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 3px; font-size: 12px;">FAILED</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Failed At:</td>
+                    <td style="padding: 8px 0;" th:text="${failedAt}">2024-01-01T00:00:00Z</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
+            <p style="margin: 0; color: #856404;">
+                <strong>What Should You Do?</strong><br/>
+                • Verify your payment information is correct<br/>
+                • Check that you have sufficient funds<br/>
+                • Try a different payment method<br/>
+                • Contact your bank if the issue persists
+            </p>
+        </div>
+
+        <div style="background-color: #f8d7da; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0;">
+            <p style="margin: 0; color: #721c24;">
+                <strong>Important:</strong><br/>
+                Your order has not been placed. You will need to complete the payment process to proceed with your purchase.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="#" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Retry Payment</a>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <p style="font-size: 14px; color: #666;">
+                If you continue to experience issues or have questions about this payment failure, please contact our support team immediately.
+            </p>
+            <p style="font-size: 14px; color: #666;">
+                We're here to help you complete your purchase.
+            </p>
+        </div>
+
+        <p style="margin-top:20px;">Best regards,<br/>Wassim's Ecommerce Team</p>
+    </div>
+</body>
+</html>
+

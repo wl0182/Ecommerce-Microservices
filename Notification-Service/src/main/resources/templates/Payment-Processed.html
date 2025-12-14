@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Processed</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #594949; margin: 0; padding: 20px; color: #594949;">
+    <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <h2 style="color:#28a745;">Payment Successfully Processed!</h2>
+        <p>Your payment has been confirmed and processed.</p>
+
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color:#333; margin-top: 0;">Payment Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; width: 40%;">Payment ID:</td>
+                    <td style="padding: 8px 0;" th:text="${paymentId}">PAY-123456</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Order ID:</td>
+                    <td style="padding: 8px 0;" th:text="${orderId}">ORD-123</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td>
+                    <td style="padding: 8px 0; color: #28a745; font-size: 18px; font-weight: bold;"
+                        th:text="${'$' + #numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Payment Method:</td>
+                    <td style="padding: 8px 0;" th:text="${paymentMethod}">CARD</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Status:</td>
+                    <td style="padding: 8px 0;">
+                        <span style="background-color: #28a745; color: white; padding: 4px 12px; border-radius: 3px; font-size: 12px;"
+                              th:text="${status}">SUCCESS</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold;">Transaction Date:</td>
+                    <td style="padding: 8px 0;" th:text="${createdAt}">2024-01-01T00:00:00Z</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="background-color: #e7f3ff; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;">
+            <p style="margin: 0; color: #004085;">
+                <strong>What's Next?</strong><br/>
+                Your order is now being processed and will be shipped shortly. You will receive a shipment confirmation email with tracking details.
+            </p>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <p style="font-size: 14px; color: #666;">
+                If you have any questions about this payment or your order, please contact our support team.
+            </p>
+            <p style="font-size: 14px; color: #666;">
+                Keep this email for your records.
+            </p>
+        </div>
+
+        <p style="margin-top:20px;">Best regards,<br/>Wassim's Ecommerce Team</p>
+    </div>
+</body>
+</html>
+
