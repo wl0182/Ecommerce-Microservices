@@ -33,6 +33,12 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+    // get all users
+    @GetMapping("/all")
+    public ResponseEntity<List<UserDetails>> getAllUsers() {
+        List<UserDetails> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
 
     // Create user
     @PostMapping("/deprecated-create")
@@ -87,6 +93,13 @@ public class UserController {
     public ResponseEntity<Boolean> validateAddress(@PathVariable Long userId, @PathVariable Long addressId) {
         Boolean isValid = userService.validateAddress(userId, addressId);
         return ResponseEntity.ok(isValid);
+    }
+
+    // delete user
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        String response = userService.deleteUser(id);
+        return ResponseEntity.ok(response);
     }
 
 

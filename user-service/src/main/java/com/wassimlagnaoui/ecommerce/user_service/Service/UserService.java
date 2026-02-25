@@ -4,6 +4,7 @@ package com.wassimlagnaoui.ecommerce.user_service.Service;
 import com.wassimlagnaoui.common_events.Events.UserService.UserRegisteredEvent;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.user_service.DTO.*;
+import com.wassimlagnaoui.ecommerce.user_service.Exceptions.InvalidLoginException;
 import com.wassimlagnaoui.ecommerce.user_service.Exceptions.UserNotFoundException;
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
 import com.wassimlagnaoui.ecommerce.user_service.Model.User;
@@ -44,6 +45,14 @@ public class UserService {
         return userRepository.findById(id)
                 .map(user -> new UserDetails(user.getId(), user.getEmail(), user.getName(), user.getPhoneNumber()))
                 .orElse(null);
+    }
+
+    // get all users
+    @Transactional(readOnly = true)
+    public List<UserDetails> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> new UserDetails(user.getId(), user.getEmail(), user.getName(), user.getPhoneNumber()))
+                .toList();
     }
 
     // create user
@@ -102,7 +111,7 @@ public class UserService {
             String token = "fake-jwt-token-for-user-" + user.getId();
             return new LoginResponse(token, user.getId(), user.getEmail(), user.getName());
         } else {
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidLoginException("Invalid credentials");
         }
      }
 
@@ -118,6 +127,14 @@ public class UserService {
         return UserDetails.builder().email(updatedUser.getEmail())
                 .id(updatedUser.getId()).name(updatedUser.getName()).phoneNumber(updatedUser.getPhoneNumber()).build();
     }
+    // delete user
+    @Transactional
+    public String deleteUser(Long id){
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+        userRepository.delete(user);
+        return "User with id " + id + " has been deleted.";
+    }
+
 
 
     // get User Addresses by user id
