@@ -5,6 +5,8 @@ import com.wassimlagnaoui.ecommerce.user_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
 import com.wassimlagnaoui.ecommerce.user_service.Service.UserService;
 import jakarta.annotation.PostConstruct;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,6 +47,16 @@ public class UserController {
     public ResponseEntity<UserDetails> registerUser(@RequestBody RegisterUserDTO registerUserDTO) {
         UserDetails registeredUser = userService.registerUser(registerUserDTO);
         return ResponseEntity.ok(registeredUser);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> loginUser(@RequestBody LoginRequest loginRequest) {
+        LoginResponse loginResponse = userService.loginUser(loginRequest);
+        if (loginResponse != null) {
+            return ResponseEntity.ok(loginResponse);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // Unauthorized
+        }
     }
 
     //update user
