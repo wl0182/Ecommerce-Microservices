@@ -92,7 +92,19 @@ public class UserService {
         return new UserDetails(savedUser.getId(), savedUser.getEmail(), savedUser.getName(), savedUser.getPhoneNumber());
 
     }
-    // Leaving Login and Authentication to Auth Service for Later
+    // simulate login by decoding password and comparing it to the stored password
+    @Transactional
+     public LoginResponse loginUser(LoginRequest loginRequest){
+        User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UserNotFoundException("User not found with email: " + loginRequest.getEmail()));
+
+        if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())){
+            // generate a fake token for demonstration purposes
+            String token = "fake-jwt-token-for-user-" + user.getId();
+            return new LoginResponse(token, user.getId(), user.getEmail(), user.getName());
+        } else {
+            throw new RuntimeException("Invalid credentials");
+        }
+     }
 
     // update user
     public UserDetails updateUser(Long id, UpdateUserDTO userDTO){
