@@ -2,8 +2,11 @@ package com.wassimlagnaoui.ecommerce.Notification_Service.Service;
 
 
 import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
+import com.wassimlagnaoui.common_events.Events.OrderService.OrderCancelledEvent;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
+import com.wassimlagnaoui.common_events.Events.ShippingService.ShipmentCreatedEvent;
+import com.wassimlagnaoui.common_events.Events.ShippingService.ShipmentUpdatedEvent;
 import com.wassimlagnaoui.ecommerce.Notification_Service.DTO.TemplateRequest;
 import com.wassimlagnaoui.ecommerce.Notification_Service.DTO.TemplateResponse;
 import com.wassimlagnaoui.ecommerce.Notification_Service.Domain.NotificationType;
@@ -148,6 +151,48 @@ public class TemplateService {
 
         return templateEngine.process("Payment-Failed", context);
     }
+
+
+    // render Shipment Created template
+    // Variables: shipmentId, orderId, userId, trackingNumber, status, createdAt
+    public String renderShipmentCreatedTemplate(ShipmentCreatedEvent shipmentCreatedEvent) {
+        Context context = new Context();
+        context.setVariable("shipmentId", shipmentCreatedEvent.getShipmentId());
+        context.setVariable("orderId", shipmentCreatedEvent.getOrderId());
+        context.setVariable("userId", shipmentCreatedEvent.getUserId());
+        context.setVariable("trackingNumber", shipmentCreatedEvent.getTrackingNumber());
+        context.setVariable("status", shipmentCreatedEvent.getStatus());
+        context.setVariable("createdAt", shipmentCreatedEvent.getCreatedAt());
+        return templateEngine.process("Shipment-Created", context);
+    }
+
+
+    // render Shipment Updated template
+    // Variables: shipmentId, orderId, trackingNumber, status, updatedAt
+    public String renderShipmentUpdatedTemplate(ShipmentUpdatedEvent shipmentUpdatedEvent) {
+        Context context = new Context();
+        context.setVariable("shipmentId", shipmentUpdatedEvent.getShipmentId());
+        context.setVariable("orderId", shipmentUpdatedEvent.getOrderId());
+        context.setVariable("trackingNumber", shipmentUpdatedEvent.getTrackingNumber());
+        context.setVariable("status", shipmentUpdatedEvent.getStatus());
+        context.setVariable("updatedAt", shipmentUpdatedEvent.getUpdatedAt());
+        return templateEngine.process("Shipment-Updated", context);
+    }
+
+
+    // render Order Cancelled template
+    // Variables: orderId, userId, items, reason, cancelledAt
+    public String renderOrderCancelledTemplate(OrderCancelledEvent orderCancelledEvent) {
+        Context context = new Context();
+        context.setVariable("orderId", orderCancelledEvent.getOrderId());
+        context.setVariable("userId", orderCancelledEvent.getUserId());
+        context.setVariable("items", orderCancelledEvent.getItems());
+        context.setVariable("reason", orderCancelledEvent.getReason());
+        context.setVariable("cancelledAt", orderCancelledEvent.getCancelledAt());
+        return templateEngine.process("Order-Cancelled", context);
+    }
+
+
 
 
 
