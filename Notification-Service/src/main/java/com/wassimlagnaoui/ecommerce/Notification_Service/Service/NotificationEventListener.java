@@ -1,9 +1,12 @@
 package com.wassimlagnaoui.ecommerce.Notification_Service.Service;
 
 import com.wassimlagnaoui.common_events.DummyEvent;
+import com.wassimlagnaoui.common_events.Events.OrderService.OrderCancelledEvent;
 import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
+import com.wassimlagnaoui.common_events.Events.ShippingService.ShipmentCreatedEvent;
+import com.wassimlagnaoui.common_events.Events.ShippingService.ShipmentUpdatedEvent;
 import com.wassimlagnaoui.common_events.Events.UserService.UserRegisteredEvent;
 import com.wassimlagnaoui.common_events.KafkaGroupIds;
 import com.wassimlagnaoui.common_events.KafkaTopics;
@@ -79,6 +82,43 @@ public class NotificationEventListener {
         log.info("Processed PaymentFailed Event for order: " + paymentFailed.getOrderId());
         log.info("Email Sent to User for Payment Failure");
     }
+
+//    - On shipment-created (C): Send shipment created email/SMS
+    @KafkaListener(topics = KafkaTopics.SHIPMENT_CREATED, groupId =KafkaGroupIds.NOTIFICATION_SERVICE_GROUP )
+    public void handleShipmentCreatedEvent(ShipmentCreatedEvent shipmentCreatedEvent) {
+        // Implementation goes here
+        String subject = "Shipment Created - Order #" + shipmentCreatedEvent.getOrderId();
+        String body = templateService.renderShipmentCreatedTemplate(shipmentCreatedEvent);
+        emailService.sendEmail("lagnaouiw@gmail.com",subject,body);
+        System.out.println("Processed ShipmentCreatedEvent for order: " + shipmentCreatedEvent.getOrderId());
+        log.info("Processed ShipmentCreatedEvent for order: " + shipmentCreatedEvent.getOrderId());
+        log.info("Email Sent to User for Shipment Created");
+    }
+
+
+//- On shipment-updated (C): Send shipment status update email/SMS
+    @KafkaListener(topics = KafkaTopics.SHIPMENT_UPDATED, groupId =KafkaGroupIds.NOTIFICATION_SERVICE_GROUP )
+    public void handleShipmentUpdatedEvent(ShipmentUpdatedEvent shipmentUpdatedEvent) {
+        // Implementation goes here
+        String subject = "Shipment Update - Order #" + shipmentUpdatedEvent.getOrderId();
+        String body = templateService.renderShipmentUpdatedTemplate(shipmentUpdatedEvent);
+        emailService.sendEmail("lagnaouiw@gmail.com",subject,body);
+        System.out.println("Processed ShipmentUpdatedEvent for order: " + shipmentUpdatedEvent.getOrderId());
+        log.info("Processed ShipmentUpdatedEvent for order: " + shipmentUpdatedEvent.getOrderId());
+        log.info("Email Sent to User for Shipment Update");
+    }
+
+//- On order-cancelled (C): Send order cancellation email/SMS
+    @KafkaListener(topics = KafkaTopics.ORDER_CANCELLED, groupId =KafkaGroupIds.NOTIFICATION_SERVICE_GROUP )
+    public void handleOrderCancelledEvent(OrderCancelledEvent orderCancelledEvent) {
+        // Implementation goes here
+        String subject = "Order Cancelled - Order #" + orderCancelledEvent.getOrderId();
+        String body = templateService.renderOrderCancelledTemplate(orderCancelledEvent);
+        emailService.sendEmail("lagnaouiw@gmail.com", subject, body);
+        log.info("Processed OrderCancelledEvent for order: " + orderCancelledEvent.getOrderId());
+        log.info("Email Sent to User for Order Cancellation");
+    }
+
 
 
 
