@@ -131,6 +131,8 @@ public class TemplateService {
         context.setVariable("paymentMethod", paymentProcessed.getPaymentMethod());
         context.setVariable("status", paymentProcessed.getStatus());
         context.setVariable("createdAt", paymentProcessed.getCreatedAt());
+        context.setVariable("amount", paymentProcessed.getAmount());
+
 
 
         return templateEngine.process("Payment-Processed", context);
