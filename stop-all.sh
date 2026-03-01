@@ -1,10 +1,23 @@
 #!/bin/zsh
 
-echo "Stopping all running microservices..."
+PID_FILE=.microservices-pids
 
-# Kill only Spring Boot processes started by Maven inside this project
-ps -ef | grep "spring-boot:run" | grep -v grep | awk '{print $2}' | xargs -I {} kill {}
+if [ ! -f "$PID_FILE" ]; then
+  echo "No PID file found. Are services running?"
+  exit 1
+fi
 
-echo "Done."
+echo "Stopping microservices..."
 
+while read pid; do
+  if ps -p $pid > /dev/null; then
+    echo "Stopping PID $pid"
+    kill -15 $pid
+  else
+    echo "Process $pid already stopped"
+  fi
+done < $PID_FILE
 
+rm -f $PID_FILE
+
+echo "Shutdown signals sent."

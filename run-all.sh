@@ -1,12 +1,37 @@
 #!/bin/zsh
-mvn -pl Eureka-Server spring-boot:run &
-sleep 5
-mvn -pl user-service spring-boot:run &
-mvn -pl order-service spring-boot:run &
-mvn -pl product-service spring-boot:run &
-mvn -pl Cart-Service spring-boot:run &
-mvn -pl Payment-Service spring-boot:run &
-mvn -pl Notification-Service spring-boot:run &
-mvn -pl Shipping-Service spring-boot:run &
-wait
 
+PID_FILE=.microservices-pids
+rm -f $PID_FILE
+
+echo "Starting microservices..."
+
+mvn -pl Eureka-Server spring-boot:run &
+echo $! >> $PID_FILE
+
+sleep 5
+
+mvn -pl user-service spring-boot:run &
+echo $! >> $PID_FILE
+
+mvn -pl order-service spring-boot:run &
+echo $! >> $PID_FILE
+
+mvn -pl product-service spring-boot:run &
+echo $! >> $PID_FILE
+
+mvn -pl Cart-Service spring-boot:run &
+echo $! >> $PID_FILE
+
+mvn -pl Payment-Service spring-boot:run &
+echo $! >> $PID_FILE
+
+mvn -pl Notification-Service spring-boot:run &
+echo $! >> $PID_FILE
+
+mvn -pl Shipping-Service spring-boot:run &
+echo $! >> $PID_FILE
+
+echo "All services started."
+echo "PIDs stored in $PID_FILE"
+
+wait
