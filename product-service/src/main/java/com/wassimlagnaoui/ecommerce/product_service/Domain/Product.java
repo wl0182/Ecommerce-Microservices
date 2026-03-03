@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -21,7 +22,7 @@ public class Product {
     @Column
     private String name;
     private String description;
-    private Double price;
+    private BigDecimal price;
     private String sku;
 
     private Integer stockQuantity;

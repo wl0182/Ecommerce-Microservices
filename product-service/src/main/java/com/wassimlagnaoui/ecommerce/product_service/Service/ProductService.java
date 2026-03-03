@@ -102,7 +102,7 @@ public class ProductService {
         Product product = new Product();
         product.setName(createProductDTO.getName());
         product.setDescription(createProductDTO.getDescription());
-        product.setPrice(createProductDTO.getPrice().doubleValue());
+        product.setPrice(createProductDTO.getPrice());
         product.setSku(createProductDTO.getSku());
         product.setStockQuantity(createProductDTO.getStockQuantity());
         product.setCategory(categoryRepository.findById(createProductDTO.getCategoryId()).orElse(null));
@@ -116,7 +116,7 @@ public class ProductService {
                 .build();
     }
 
-    public ProductDTO updateProductPrice(Long productId, Double newPrice) {
+    public ProductDTO updateProductPrice(Long productId, BigDecimal newPrice) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
         product.setPrice(newPrice);
         Product updatedProduct = productRepository.save(product);
@@ -310,7 +310,7 @@ public class ProductService {
             product.setDescription(createProductDTO.getDescription());
         }
         if (createProductDTO.getPrice() != null) {
-            product.setPrice(createProductDTO.getPrice().doubleValue());
+            product.setPrice(createProductDTO.getPrice());
         }
 
         if (createProductDTO.getSku() != null) {
@@ -330,7 +330,7 @@ public class ProductService {
         ProductUpdatedEvent productUpdatedEvent = ProductUpdatedEvent.builder()
                 .productId(savedProduct.getId().toString())
                 .name(savedProduct.getName())
-                .price(BigDecimal.valueOf(savedProduct.getPrice()))
+                .price(savedProduct.getPrice())
                 .sku(savedProduct.getSku())
                 .stockQuantity(savedProduct.getStockQuantity())
                 .build();
@@ -366,7 +366,7 @@ public class ProductService {
             product.setDescription(createProductDTO.getDescription());
         }
         if (createProductDTO.getPrice() != null) {
-            product.setPrice(createProductDTO.getPrice().doubleValue());
+            product.setPrice(createProductDTO.getPrice());
         }
 
         if (createProductDTO.getSku() != null) {
