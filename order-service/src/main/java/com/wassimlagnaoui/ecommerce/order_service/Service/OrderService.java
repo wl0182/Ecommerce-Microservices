@@ -85,7 +85,7 @@ public class OrderService {
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(itemRequest.getProductId());
             orderItem.setQuantity(itemRequest.getQuantity());
-            orderItem.setPrice(BigDecimal.valueOf(product.getPrice()));
+            orderItem.setPrice(product.getPrice());
             orderItem.setOrder(order);
 
             orderItems.add(orderItem);
@@ -120,7 +120,7 @@ public class OrderService {
                 .items(orderItems.stream().map(oi -> OrderCreateEvent.Item.builder()
                         .productId(String.valueOf(oi.getProductId()))
                         .quantity(oi.getQuantity())
-                        .price(oi.getPrice().doubleValue())
+                        .price(oi.getPrice())
                         .build()).collect(Collectors.toList()))
                 .createdAt(savedOrder.getOrderDate().toString())
                 .build();
@@ -333,7 +333,7 @@ public class OrderService {
                 .id(productId)
                 .name("Unknown Product")
                 .description("Product information is currently unavailable.")
-                .price(0.0)
+                .price(BigDecimal.valueOf(0.0))
                 .build();
     }
 
@@ -345,7 +345,7 @@ public class OrderService {
                     .id(productId)
                     .name("Unknown Product")
                     .description("Product information is currently unavailable.")
-                    .price(0.0)
+                    .price(BigDecimal.valueOf(0.0))
                     .build());
         }
         return fallbackProducts;
@@ -400,7 +400,8 @@ public class OrderService {
 
     }
 
-    public List<OrderDTO> findOrderByStatus(String status){
+    public List<OrderDTO> findOrderByStatus(OrderStatus status){
+
         List<Order> orders = orderRepository.findByStatus(status);
 
         if (orders.isEmpty()){
