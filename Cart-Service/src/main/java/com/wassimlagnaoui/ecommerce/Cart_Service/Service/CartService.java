@@ -34,7 +34,7 @@ public class CartService {
     private final CartRepository cartRepository;
 
     @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     // services
     @Value("${services.order-service.url}")
@@ -44,13 +44,15 @@ public class CartService {
     private String productServiceUrl;
 
     @Autowired
-    private KafkaEventPublisher kafkaEventPublisher;
+    private final KafkaEventPublisher kafkaEventPublisher;
 
 
 
-    public CartService(CartItemRepository cartItemRepository, CartRepository cartRepository) {
+    public CartService(CartItemRepository cartItemRepository, CartRepository cartRepository, RestTemplate restTemplate, KafkaEventPublisher kafkaEventPublisher) {
         this.cartItemRepository = cartItemRepository;
         this.cartRepository = cartRepository;
+        this.restTemplate = restTemplate;
+        this.kafkaEventPublisher = kafkaEventPublisher;
     }
 
     // Get cart by user ID
@@ -103,7 +105,7 @@ public class CartService {
 
     // bulk getProducts by IDs
     public List<ProductDTO> getProductsByIds(List<Long> productIds) {
-        ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity("http://PRODUCT-SERVICE/products/bulk", productIds, ProductDTO[].class);
+        ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity(productServiceUrl, productIds, ProductDTO[].class);
         return List.of(response.getBody());
     }
     // get Product by ID
