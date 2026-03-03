@@ -95,7 +95,9 @@ public class CartService {
 
         cartResponse.setUserId(userId);
         cartResponse.setItems(cartItemDTOS);
-        double totalAmount = cartItemDTOS.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
+        BigDecimal totalAmount =cartItemDTOS.stream()
+                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         cartResponse.setTotalAmount(totalAmount);
 
 

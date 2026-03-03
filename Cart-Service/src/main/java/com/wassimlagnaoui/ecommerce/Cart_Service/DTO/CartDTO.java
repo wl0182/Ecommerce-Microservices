@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -15,7 +16,7 @@ public class CartDTO {
 
     private long userId;
     private List<CartItemDTO> items;
-    private double totalAmount;
+    private BigDecimal totalAmount;
 
 }
 
