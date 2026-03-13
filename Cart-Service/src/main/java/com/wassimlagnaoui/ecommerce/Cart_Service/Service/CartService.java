@@ -201,12 +201,19 @@ public class CartService {
         cart.getCartItems().remove(cartItem);
         cart.setUpdatedAt(LocalDateTime.now());
 
+        cartRepository.save(cart); // save cart to trigger orphanRemoval and delete cart item from cart_items table
+
+        cartItemRepository.delete(cartItem);
+
 
         // cartItemRepository.delete(cartItem) did not work as expected here for unknown reasons
         log.info("Deleted cart item with ID: " + cartItem.getId() + " and Product ID: " + productId + " from cart.");
 
         return new ResponseMessage("Product with ID: " + productId + " removed from cart.");
     }
+
+
+
 
     // clear cart
     @Transactional
