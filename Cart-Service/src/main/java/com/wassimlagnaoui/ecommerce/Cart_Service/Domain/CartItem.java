@@ -18,6 +18,8 @@ public class CartItem {
     private Long id;
     private Long productId;
     private Integer quantity;
+
+    @Column(precision = 13, scale = 2)
     private BigDecimal price;
 
     @ManyToOne
