@@ -115,12 +115,12 @@ public class OrderService {
         OrderCreateEvent orderCreateEvent = OrderCreateEvent.builder()
                 .orderId(String.valueOf(savedOrder.getId()))
                 .userId(String.valueOf(savedOrder.getUserId()))
-                .totalAmount(savedOrder.getTotalAmount().doubleValue())
+                .totalAmount(savedOrder.getTotalAmount())
                 .paymentMethod(createOrderDTO.getPaymentMethod())
                 .items(orderItems.stream().map(oi -> OrderCreateEvent.Item.builder()
                         .productId(String.valueOf(oi.getProductId()))
                         .quantity(oi.getQuantity())
-                        .price(oi.getPrice())
+                        .price(oi.getPrice()) // line 123
                         .build()).collect(Collectors.toList()))
                 .createdAt(savedOrder.getOrderDate().toString())
                 .build();

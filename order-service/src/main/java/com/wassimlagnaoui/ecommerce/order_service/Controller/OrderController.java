@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.order_service.Controller;
 
 
 import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
+import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderStatus;
 import com.wassimlagnaoui.ecommerce.order_service.Service.OrderService;
 import jakarta.ws.rs.PathParam;
 import org.springframework.data.domain.Page;
@@ -87,7 +88,7 @@ public class OrderController {
     }
 
     @GetMapping("/status")
-    public ResponseEntity<List<OrderDTO>> getOrdersByStatus(@RequestParam("status") String status) {
+    public ResponseEntity<List<OrderDTO>> getOrdersByStatus(@RequestParam("status") OrderStatus status) {
         List<OrderDTO> orders = orderService.findOrderByStatus(status);
         return ResponseEntity.ok(orders);
     }

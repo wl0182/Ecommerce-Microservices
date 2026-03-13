@@ -1,6 +1,7 @@
 package com.wassimlagnaoui.ecommerce.order_service.Repository;
 
 import com.wassimlagnaoui.ecommerce.order_service.Entities.Order;
+import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -37,7 +38,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 
     @Query("SELECT o FROM Order o WHERE o.status = :status")
-    List<Order> findByStatus(String status);
+    List<Order> findByStatus(OrderStatus status);
 
 
 }

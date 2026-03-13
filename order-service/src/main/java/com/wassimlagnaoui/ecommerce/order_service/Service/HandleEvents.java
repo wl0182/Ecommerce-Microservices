@@ -57,7 +57,7 @@ public class HandleEvents {
         OrderPaidEvent orderPaidEvent = new OrderPaidEvent();
         orderPaidEvent.setOrderId(order.getId());
         orderPaidEvent.setUserId(order.getUserId());
-        orderPaidEvent.setAmount(BigDecimal.valueOf(paymentProcessed.getAmount()));
+        orderPaidEvent.setAmount(order.getTotalAmount());
         orderPaidEvent.setPaymentMethod(paymentProcessed.getPaymentMethod());
         orderPaidEvent.setPaymentStatus(paymentProcessed.getStatus());
         orderPaidEvent.setPaidAt(paymentProcessed.getCreatedAt());
