@@ -362,7 +362,7 @@ curl http://localhost:7000/api/orders/status/1001
 curl http://localhost:7000/shipments/order/1001
 ```
 
-For detailed API documentation, see [Architecture.md](./Architecture.md) or [Architecture.html](./Architecture.html).
+For detailed API documentation, see [Architecture.md](./Architecture.md)
 
 ---
 
