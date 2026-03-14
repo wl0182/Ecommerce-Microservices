@@ -96,7 +96,13 @@ public class UserService {
         event.setRegisteredAt(LocalDateTime.now().toString());
         event.setName(savedUser.getName());
 
-        kafkaTemplate.send(KafkaTopics.USER_REGISTERED, event); // send event to kafka topic
+        kafkaTemplate.send(KafkaTopics.USER_REGISTERED, event).whenComplete((result, throwable) ->{
+                if(throwable != null){
+                    System.out.println("Failed to send event to topic " + KafkaTopics.USER_REGISTERED + ": " + throwable.getMessage());
+                } else {
+                    System.out.println("Event sent to topic " + KafkaTopics.USER_REGISTERED + " with offset " + result.getRecordMetadata().offset());
+                }
+        } ); // send event to kafka topic
 
         return new UserDetails(savedUser.getId(), savedUser.getEmail(), savedUser.getName(), savedUser.getPhoneNumber());
 
