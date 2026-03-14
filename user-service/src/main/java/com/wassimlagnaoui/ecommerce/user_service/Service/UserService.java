@@ -177,7 +177,6 @@ public class UserService {
     }
 
 
-    @CircuitBreaker(name = "shi", fallbackMethod = "addressValidationFallback")
     public Boolean validateAddress(Long userId, Long addressId){
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
