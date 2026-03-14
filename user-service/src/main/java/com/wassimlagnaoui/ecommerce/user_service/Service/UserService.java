@@ -28,15 +28,17 @@ public class UserService {
     private final UserRepository userRepository;
 
     // inject PasswordEncoder
-    @Autowired
-    @Qualifier("PasswordEncoder")
-    private BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
 
-    public UserService(UserRepository userRepository) {
+    private final BCryptPasswordEncoder passwordEncoder;
+
+
+    private final  KafkaTemplate<String, Object> kafkaTemplate;
+
+    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, KafkaTemplate<String, Object> kafkaTemplate) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     // get user by id
