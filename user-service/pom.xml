@@ -93,6 +93,10 @@
 			<artifactId>common-events</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
 
     </dependencies>
 
@@ -126,3 +130,5 @@
 	</build>
 
 </project>
+
+
