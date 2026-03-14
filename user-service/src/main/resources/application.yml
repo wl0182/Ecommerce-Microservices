@@ -30,34 +30,6 @@ spring:
         spring.json.trusted.packages: "*" # trust all packages for JSON deserialization
 
 
-resilience4j:
-  retry: # retry configuration is used to automatically retry failed operations
-    instances:
-      userRegistrationRetry:
-        max-attempts: 3
-        wait-duration: 500ms
-        retry-exceptions:
-          - org.springframework.web.client.ResourceAccessException
-          - java.io.IOException
-
-  ratelimiter: # rate limiter configuration is used to limit the rate of requests to a service to prevent overload
-    instances:
-      userRegistrationRateLimiter:
-        limit-for-period: 100
-        limit-refresh-period: 60s
-        timeout-duration: 0
-        subscribe-for-events: true
-
-management:
-  health:
-    circuitbreakers:
-      enabled: false
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-
-
 
 server:
   port: 7001
