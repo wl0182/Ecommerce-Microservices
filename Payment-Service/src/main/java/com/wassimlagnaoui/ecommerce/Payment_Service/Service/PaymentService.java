@@ -94,7 +94,7 @@ public class PaymentService {
         PaymentRefunded refundEvent = PaymentRefunded.builder()
                 .paymentId(payment.getId())
                 .orderId(payment.getOrderId())
-                .amount(BigDecimal.valueOf(payment.getAmount()))
+                .amount(payment.getAmount())
                 .refundedAt(java.time.Instant.now())
                 .reason(request.getReason())
                 .build();
@@ -171,7 +171,7 @@ public class PaymentService {
         paymentFailed.setPaymentId(savedPayment.getId().toString());
         paymentFailed.setOrderId(payment.getOrderId());
         paymentFailed.setUserId(orderCreateEvent.getUserId().toString());
-        paymentFailed.setAmount(BigDecimal.valueOf(payment.getAmount()));
+        paymentFailed.setAmount(payment.getAmount());
         paymentFailed.setFailedAt(java.time.Instant.now());
 
         // transaction manager after commit implementation

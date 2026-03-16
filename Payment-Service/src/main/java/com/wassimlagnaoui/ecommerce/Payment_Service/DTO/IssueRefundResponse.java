@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 public class IssueRefundResponse {
     private Long id;
     private Long orderId;
-    private Double amount;
+    private BigDecimal amount;
     private String status;
     private LocalDateTime refundedAt;
 }
