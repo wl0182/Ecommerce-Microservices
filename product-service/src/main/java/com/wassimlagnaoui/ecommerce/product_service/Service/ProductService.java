@@ -298,8 +298,7 @@ public class ProductService {
         return MessageDTO.builder().message("Category deleted successfully").build();
     }
 
-    @Retry(name = "kafkaRetry", fallbackMethod = "updateProductFallback")
-    @CircuitBreaker(name = "kafkaCircuitBreaker", fallbackMethod = "updateProductFallback")
+
     public ProductDTO updateProduct(Long id, CreateProductDTO createProductDTO) {
         Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
         // this is called from a patch endpoint so we need to check for null values
@@ -335,13 +334,9 @@ public class ProductService {
                 .stockQuantity(savedProduct.getStockQuantity())
                 .build();
 
-        try {
-            kafkaTemplate.send(Topics.TOPIC_PRODUCT_UPDATED, productUpdatedEvent).get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new KafkaEventNotSentException("Failed to send ProductUpdatedEvent to Kafka: " + e.getMessage());
-        }
+
+        kafkaTemplate.send(Topics.TOPIC_PRODUCT_UPDATED, productUpdatedEvent);
+
 
 
         return ProductDTO.builder().id(savedProduct.getId())
@@ -354,40 +349,5 @@ public class ProductService {
 
     }
 
-    // Fallback method for updateProduct when Kafka is down
-    public ProductDTO updateProductFallback(Long id, CreateProductDTO createProductDTO, Throwable throwable) {
-        // Fallback logic when Kafka is down
-        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
-        // this is called from a patch endpoint so we need to check for null values
-        if (createProductDTO.getName() != null) {
-            product.setName(createProductDTO.getName());
-        }
-        if (createProductDTO.getDescription() != null) {
-            product.setDescription(createProductDTO.getDescription());
-        }
-        if (createProductDTO.getPrice() != null) {
-            product.setPrice(createProductDTO.getPrice());
-        }
 
-        if (createProductDTO.getSku() != null) {
-            product.setSku(createProductDTO.getSku());
-        }
-        if (createProductDTO.getStockQuantity() != null) {
-            product.setStockQuantity(createProductDTO.getStockQuantity());
-        }
-        if (createProductDTO.getCategoryId() != null) {
-            Category category = categoryRepository.findById(createProductDTO.getCategoryId())
-                    .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + createProductDTO.getCategoryId()));
-            product.setCategory(category);
-        }
-        Product savedProduct = productRepository.save(product);
-
-        return ProductDTO.builder().id(savedProduct.getId())
-                .name(savedProduct.getName())
-                .description(savedProduct.getDescription())
-                .price(savedProduct.getPrice())
-                .categoryName(savedProduct.getCategory() != null ? savedProduct.getCategory().getName() : null)
-                .sku(savedProduct.getSku())
-                .build();
-    }
 }
