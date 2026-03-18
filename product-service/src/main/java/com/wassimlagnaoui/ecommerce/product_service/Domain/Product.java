@@ -22,6 +22,8 @@ public class Product {
     @Column
     private String name;
     private String description;
+
+    @Column(precision = 13, scale = 2)
     private BigDecimal price;
     private String sku;
 
