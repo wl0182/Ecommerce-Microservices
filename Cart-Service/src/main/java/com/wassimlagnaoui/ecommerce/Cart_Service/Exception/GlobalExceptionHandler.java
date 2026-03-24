@@ -53,5 +53,50 @@ public class GlobalExceptionHandler {
 
     }
 
+    // handle product list empty exception
+    @ExceptionHandler(ProductListEmptyException.class)
+    public  ResponseEntity<HashMap<String,String>>handleProductListEmptyException(ProductListEmptyException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.NOT_FOUND.toString());
+        errorResponse.put("message", "Product list in the cart is empty");
+        errorResponse.put("suggestion", "Please add products to the cart before checkout.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    // handle product service unavailable exception
+    @ExceptionHandler(ProductServiceUnavailble.class)
+    public  ResponseEntity<HashMap<String,String>>handleProductServiceUnavailble(ProductServiceUnavailble ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
+        errorResponse.put("message", "Product Service is currently unavailable");
+        errorResponse.put("suggestion", "Please try again later.");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
+
+    // handle quantity unavailable exception
+    @ExceptionHandler(QuantityUnavailable.class)
+    public  ResponseEntity<HashMap<String,String>>handleQuantityUnavailable(QuantityUnavailable ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.toString());
+        errorResponse.put("message", "Requested quantity is unavailable in inventory");
+        errorResponse.put("suggestion", "Please check the available inventory for the products and try again.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    // handle IllegalArgumentException
+    @ExceptionHandler(IllegalArgumentException.class)
+    public  ResponseEntity<HashMap<String,String>>handleIllegalArgumentException(IllegalArgumentException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.toString());
+        errorResponse.put("message", "Invalid input provided");
+        errorResponse.put("suggestion", "Please check the input data and try again.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+
 
 }
