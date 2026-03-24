@@ -1,7 +1,6 @@
-package com.wassimlagnaoui.ecommerce.Cart_Service.DTO;
+package com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs;
 
 
-import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

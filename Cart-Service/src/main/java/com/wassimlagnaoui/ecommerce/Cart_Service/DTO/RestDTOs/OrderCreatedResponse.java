@@ -1,4 +1,4 @@
-package com.wassimlagnaoui.ecommerce.Cart_Service.DTO;
+package com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs;
 
 
 import lombok.AllArgsConstructor;
