@@ -11,6 +11,10 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+  web:
+    client:
+      connect-timeout: 5000 # Connection timeout in milliseconds
+      read-timeout: 5000 # Read timeout in milliseconds
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -26,6 +30,9 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
 
+#RestClient Timeoutconfiguration
+
+
 server:
   port: 7003
 
@@ -35,7 +42,12 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
 
 
-
+# Actuator endpoints configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakerevents,retryevents,beans,env,metrics, circuitbreakers, timelimiters
 
 # Services URLs :
 services:
@@ -56,31 +68,21 @@ services:
 resilience4j:
   circuitbreaker:
     instances:
-        kafkaCircuitBreaker: # we need this because we are calling kafka producer inside cart service
+        productServiceCircuitBreaker:
             registerHealthIndicator: true
-            slidingWindowSize: 10
-            minimumNumberOfCalls: 3
-            failureRateThreshold: 50
-            waitDurationInOpenState: 5000 # in milliseconds
-            permittedNumberOfCallsInHalfOpenState: 3
-        orderServiceCircuitBreaker:
-          registerHealthIndicator: true
-          slidingWindowSize: 10
-          minimumNumberOfCalls: 6
-          failureRateThreshold: 50
-          waitDurationInOpenState: 10000
-          permittedNumberOfCallsInHalfOpenState: 3
-
-
+            sliding-window-type: time_based  # Use time-based sliding window to calculate failure rate over a specific time period
+            sliding-window-size: 10 # Time window size in seconds for calculating failure rate
+            failureRateThreshold: 50 # Percentage of failed calls to open the circuit
+            waitDurationInOpenState: 10000 # Time to wait before transitioning from open to half-open state (in milliseconds)
+            permittedNumberOfCallsInHalfOpenState: 3 # Number of calls allowed in half-open state before deciding to close or open the circuit
+            minimumNumberOfCalls: 5 # Minimum number of calls required before calculating the failure rate
+            ignore-exceptions:
+              - com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductNotFoundException
   retry:
     instances:
-      cartServiceRetry: # this name will be used in the annotation in the service class of cart service
-        maxAttempts: 3
-        waitDuration: 2000 # in milliseconds
-        exponentialBackoffMultiplier: 2
-        # Retry on all exceptions by default, can be customized further if needed
-
-
+        productServiceRetry:
+            max-attempts: 3
+            wait-duration: 2000 # Time to wait between retry attempts (in milliseconds)
 
 
 
