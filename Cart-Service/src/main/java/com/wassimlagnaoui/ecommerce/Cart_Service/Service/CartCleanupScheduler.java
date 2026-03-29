@@ -11,7 +11,7 @@ public class CartCleanupScheduler {
         this.cartService = cartService;
     }
 
-    @Scheduled(fixedRate = 3600000)
+    @Scheduled(fixedRate = 36000000) // in seconds: every 10 hours
     public void cleanupOldCarts() {
         cartService.cleanupOldCarts();
     }
