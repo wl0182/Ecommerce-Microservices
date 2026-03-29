@@ -14,4 +14,4 @@ public class InventoryDTO {
     private String productName;
     private String sku;
     private Integer stockInventory;
-}
+} // { productId, productName, sku, stockInventory }
