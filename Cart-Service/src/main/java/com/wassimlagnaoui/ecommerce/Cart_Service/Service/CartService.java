@@ -2,21 +2,17 @@ package com.wassimlagnaoui.ecommerce.Cart_Service.Service;
 
 import com.wassimlagnaoui.common_events.Events.CartService.CartClearedEvent;
 import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.*;
+import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs.*;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.Cart;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Domain.CartItem;
-import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.CartNotFoundException;
-import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.OrderServiceDownException;
-import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductNotFoundException;
+import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.*;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartItemRepository;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Repository.CartRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-import jakarta.ws.rs.DELETE;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -33,6 +29,8 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
 
+    private final ProductRestClient productRestClient;
+
     @Autowired
     private final RestTemplate restTemplate;
 
@@ -48,9 +46,10 @@ public class CartService {
 
 
 
-    public CartService(CartItemRepository cartItemRepository, CartRepository cartRepository, RestTemplate restTemplate, KafkaEventPublisher kafkaEventPublisher) {
+    public CartService(CartItemRepository cartItemRepository, CartRepository cartRepository, ProductRestClient productRestClient, RestTemplate restTemplate, KafkaEventPublisher kafkaEventPublisher) {
         this.cartItemRepository = cartItemRepository;
         this.cartRepository = cartRepository;
+        this.productRestClient = productRestClient;
         this.restTemplate = restTemplate;
         this.kafkaEventPublisher = kafkaEventPublisher;
     }
@@ -58,98 +57,73 @@ public class CartService {
     // Get cart by user ID
     @Transactional(readOnly = true)
     public CartDTO getCartByUserId(Long userId) {
-        CartDTO cartResponse = new CartDTO();
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
-        if (cartOptional.isEmpty()) {
-            throw new CartNotFoundException("Cart not found for user ID: " + userId);
-        }
-        Cart cart = cartOptional.get();
+        // retrieve cart by user id
+        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
 
-
+        // retrieve cart items by cart id
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
-
-        List<Long> productIds = cartItems.stream().map(CartItem::getProductId).toList(); // extract product IDs from cart items
-        List<ProductDTO> products = getProductsByIds(productIds);
-
-        // map products by ID for easy lookup
-        HashMap<Long,ProductDTO> productMap = mapProductsById(products);
-
-
-
-        List<CartItemDTO> cartItemDTOS = new ArrayList<>();
-
-
-        for (CartItem cartItem : cartItems) {
-            ProductDTO product = productMap.get(cartItem.getProductId());
-            if (product != null) {
-                CartItemDTO cartItemDTO = new CartItemDTO();
-                cartItemDTO.setCartId(cart.getId());
-                cartItemDTO.setId(cartItem.getId());
-                cartItemDTO.setProductId(product.getId());
-                cartItemDTO.setProductName(product.getName());
-                cartItemDTO.setQuantity(cartItem.getQuantity());
-                cartItemDTO.setPrice(product.getPrice());
-                cartItemDTOS.add(cartItemDTO);
-            }
+        if (cartItems.isEmpty()) {
+            return CartDTO.builder()
+                    .userId(userId)
+                    .items(List.of())
+                    .totalAmount(BigDecimal.ZERO)
+                    .build();
         }
 
-        cartResponse.setUserId(userId);
-        cartResponse.setItems(cartItemDTOS);
-        BigDecimal totalAmount =cartItemDTOS.stream()
-                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        cartResponse.setTotalAmount(totalAmount);
+        // Get the products by cart Items
+        List<Long> productIds = cartItems.stream().map(CartItem::getProductId).distinct().toList();
+        List<ProductDTO> products = productRestClient.getProductsByIds(productIds);
+        Map<Long,ProductDTO> productMap = new HashMap<>();
 
-
-        return cartResponse; // { userId, items:[{ productId, productName, quantity, price }], totalAmount }
-    }
-
-
-    // bulk getProducts by IDs
-    public List<ProductDTO> getProductsByIds(List<Long> productIds) {
-        ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity(productServiceUrl, productIds, ProductDTO[].class);
-        return List.of(response.getBody());
-    }
-    // get Product by ID
-    public ProductDTO getProductById(Long productId) {
-        String url = productServiceUrl + "/products/" + productId;
-
-        ResponseEntity<ProductDTO> response = restTemplate.getForEntity(url, ProductDTO.class);
-
-        System.out.println(response.getStatusCode());
-        System.out.println("Response from Product service is"+response.getBody().toString());
-
-        return response.getBody();
-    }
-
-    // Transform ProductDTO list to Map<Long, ProductDTO>
-    private HashMap<Long,ProductDTO> mapProductsById(List<ProductDTO> products) {
-        HashMap<Long,ProductDTO> productMap = new HashMap<>();
-        for (ProductDTO product : products) {
-            productMap.put(product.getId(), product);
+        for (ProductDTO productDTO: products){
+            productMap.put(productDTO.getId(),productDTO);
         }
-        return productMap;
-    }
 
+        // Convert CartItems to CartItemDTO adding productName
+        List<CartItemDTO> cartItemDTOList = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        for (CartItem cartItem: cartItems){
+            CartItemDTO cartItemDTO = new CartItemDTO();
+            cartItemDTO.setId(cartItem.getId());
+            cartItemDTO.setCartId(cart.getId());
+
+            // product related Data
+            cartItemDTO.setProductId(cartItem.getProductId());
+            ProductDTO productDTO = productMap.get(cartItem.getProductId());
+            String productName = productDTO == null ? "Unknow" : productDTO.getName();
+            cartItemDTO.setProductName(productName);
+
+            //Quantity and price
+            cartItemDTO.setQuantity(cartItem.getQuantity());
+            cartItemDTO.setPrice(cartItem.getPrice());
+
+            cartItemDTOList.add(cartItemDTO);
+
+            totalAmount = totalAmount.add(cartItemDTO.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+
+        }
+
+        return CartDTO.builder().items(cartItemDTOList).userId(userId).totalAmount(totalAmount).build();
+
+    }// { userId, items:[{ productId, productName, quantity, price }], totalAmount }
 
     // Add Item to Cart
-    @Transactional
+
     public CartItemDTO addItemToCart(Long userId,AddItemRequest addItemRequest){
-        Long productId = addItemRequest.getProductId();
-        Integer quantity = addItemRequest.getQuantity();
-
-        // Check if product exists in Product Service
-        ProductDTO product;
-
-        try {
-             product = getProductById(productId);
-             log.info("Product retrieved: " + product.getName()+" with ID: " + product.getId() +" from Product Service.");
-        } catch (Exception e) {
-            log.info(e.getMessage());
-            throw new ProductNotFoundException("cannot add product with ID: " + productId + " to cart. Product service is unavailable or product does not exist.");
+        // 1. Validate Input
+        if (addItemRequest.getQuantity()<=0){
+            throw new IllegalArgumentException("Quantity must be greater than zero");
         }
+        // 2. Retrieve Product and Inventory from Product Service
+        ProductDTO productDTO = productRestClient.getProductById(addItemRequest.getProductId());
+        InventoryDTO inventoryDTO = productRestClient.getProductInventoryById(addItemRequest.getProductId());
 
-        // check if cart exists for user
+        // 3. Validate if the Product or Inventory are null
+        if (productDTO == null|| inventoryDTO == null) {
+            throw new ProductNotFoundException("Product not found with id: " + addItemRequest.getProductId());
+        }
+        // 4. Check if Cart Exist for user, otherwise create one
         Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setUserId(userId);
@@ -157,24 +131,32 @@ public class CartService {
             newCart.setUpdatedAt(LocalDateTime.now());
             return cartRepository.save(newCart);
         });
-        // check if product already exists in cart
-        Optional<CartItem> existingCartItemOpt = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId);
-        if (existingCartItemOpt.isPresent()) {
-            CartItem existingCartItem = existingCartItemOpt.get();
-            existingCartItem.setQuantity(existingCartItem.getQuantity() + quantity);
-            CartItem updatedCartItem = cartItemRepository.save(existingCartItem);
-            return mapToCartItemDTO(updatedCartItem, product);
-        } else {
-            CartItem newCartItem = new CartItem();
-            newCartItem.setCart(cart);
-            newCartItem.setProductId(productId);
-            newCartItem.setQuantity(quantity);
-            newCartItem.setPrice(product.getPrice());
-            CartItem savedCartItem = cartItemRepository.save(newCartItem);
-            return mapToCartItemDTO(savedCartItem, product);    }
-
-
-    }
+        // 5. check if CartItem exist for same product and user id, otherwise create one
+        CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), addItemRequest.getProductId())
+                    .orElseGet(() -> {
+                        CartItem newCartItem = new CartItem();
+                        newCartItem.setCart(cart);
+                        cart.getCartItems().add(newCartItem); // add cart item to cart's cart items list to establish the relationship and ensure it is saved when we save the cart
+                        newCartItem.setProductId(addItemRequest.getProductId());
+                        newCartItem.setQuantity(0); // set initial quantity to 0, we will update it later after validating the total quantity against inventory stock
+                        return newCartItem;
+                    });
+        // 6. Set the Quantity and Validate Quantity again against inventory stock
+        int newQuantity = cartItem.getQuantity() + addItemRequest.getQuantity();
+        if (inventoryDTO.getStockInventory()<newQuantity){
+            throw new QuantityUnavailable("Requested quantity of product with ID: " + addItemRequest.getProductId() + " is not available in stock. Available stock: " + inventoryDTO.getStockInventory());
+        }
+        BigDecimal totalPrice = productDTO.getPrice().multiply(BigDecimal.valueOf(newQuantity));
+        // 7. Update CartItem with new quantity and price
+        cartItem.setQuantity(newQuantity);
+        cartItem.setPrice(totalPrice);
+        // 8. Save  Cart and CartItem to Db
+        cart.setUpdatedAt(LocalDateTime.now());
+        CartItem savedCartItem = cartItemRepository.save(cartItem);
+        cartRepository.save(cart);
+       // 9. Map CartItem to CartItemDTO and return it
+        return mapToCartItemDTO(savedCartItem, productDTO);
+    } // { id, cartId, productId, productName, quantity, price }
 
     private CartItemDTO mapToCartItemDTO(CartItem cartItem, ProductDTO product) {
         CartItemDTO cartItemDTO = new CartItemDTO();
@@ -202,9 +184,6 @@ public class CartService {
         cart.setUpdatedAt(LocalDateTime.now());
 
         cartRepository.save(cart); // save cart to trigger orphanRemoval and delete cart item from cart_items table
-
-        cartItemRepository.delete(cartItem);
-
 
         // cartItemRepository.delete(cartItem) did not work as expected here for unknown reasons
         log.info("Deleted cart item with ID: " + cartItem.getId() + " and Product ID: " + productId + " from cart.");
