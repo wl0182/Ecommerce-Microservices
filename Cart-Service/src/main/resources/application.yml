@@ -78,11 +78,21 @@ resilience4j:
             minimumNumberOfCalls: 5 # Minimum number of calls required before calculating the failure rate
             ignore-exceptions:
               - com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductNotFoundException
+        orderServiceCircuitBreaker:
+            registerHealthIndicator: true
+            sliding-window-type: time_based
+            sliding-window-size: 10
+            failureRateThreshold: 50
+            waitDurationInOpenState: 10000
+            permittedNumberOfCallsInHalfOpenState: 3
+            minimumNumberOfCalls: 2
   retry:
     instances:
         productServiceRetry:
             max-attempts: 3
             wait-duration: 2000 # Time to wait between retry attempts (in milliseconds)
-
+        orderServiceRetry:
+            max-attempts: 3
+            wait-duration: 2000
 
 
