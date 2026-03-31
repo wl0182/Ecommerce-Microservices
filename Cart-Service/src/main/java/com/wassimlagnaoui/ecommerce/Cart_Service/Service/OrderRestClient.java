@@ -1,9 +1,11 @@
 package com.wassimlagnaoui.ecommerce.Cart_Service.Service;
 
 
+import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs.CreateOrderDTO;
 import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs.OrderCreatedResponse;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.OrderServiceDownException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.Request;
@@ -28,8 +30,9 @@ public class OrderRestClient {
     }
 
     // method to call /place-order endpoint of Order Service
+    @Retry(name = "orderServiceRetry")
     @CircuitBreaker(name = "orderServiceCircuitBreaker", fallbackMethod = "placeOrderFallback")
-    public OrderCreatedResponse placeOrder(Long userId, Object createOrderDTO) {
+    public OrderCreatedResponse placeOrder(Long userId,CreateOrderDTO createOrderDTO) {
         // Call the Order Service's /place-order endpoint using RestClient
         String url = orderServiceBaseUrl + "/orders/place-order?userId=" + userId;
         OrderCreatedResponse orderCreatedResponse = restClient.post().uri(url).body(createOrderDTO).retrieve().onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
@@ -44,10 +47,10 @@ public class OrderRestClient {
     }
 
     // Fallback method for placeOrder
-    public OrderCreatedResponse placeOrderFallback(Long userId, Object createOrderDTO, Throwable throwable) {
+    public OrderCreatedResponse placeOrderFallback(Long userId, CreateOrderDTO createOrderDTO, Throwable throwable) {
         // do not Send an Exception here, just log the error and return a default response to indicate OrderService circuit is open
         log.warn("Failed to place order for user {}: {}", userId, throwable.getMessage());
-        return OrderCreatedResponse.builder().id(-1L).userId(userId).items(List.of()).totalAmount(0.0).status("Order Service Unavailable").build();
+        return OrderCreatedResponse.builder().id(-1L).userId(userId).items(List.of()).totalAmount(0.0).status("FAILED").build();
     }
 
 
