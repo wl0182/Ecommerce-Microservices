@@ -30,6 +30,7 @@ public class CartService {
     private final CartRepository cartRepository;
 
     private final ProductRestClient productRestClient;
+    private final OrderRestClient orderRestClient;
 
     @Autowired
     private final RestTemplate restTemplate;
@@ -46,10 +47,11 @@ public class CartService {
 
 
 
-    public CartService(CartItemRepository cartItemRepository, CartRepository cartRepository, ProductRestClient productRestClient, RestTemplate restTemplate, KafkaEventPublisher kafkaEventPublisher) {
+    public CartService(CartItemRepository cartItemRepository, CartRepository cartRepository, ProductRestClient productRestClient, OrderRestClient orderRestClient, RestTemplate restTemplate, KafkaEventPublisher kafkaEventPublisher) {
         this.cartItemRepository = cartItemRepository;
         this.cartRepository = cartRepository;
         this.productRestClient = productRestClient;
+        this.orderRestClient = orderRestClient;
         this.restTemplate = restTemplate;
         this.kafkaEventPublisher = kafkaEventPublisher;
     }
@@ -100,7 +102,7 @@ public class CartService {
 
             cartItemDTOList.add(cartItemDTO);
 
-            totalAmount = totalAmount.add(cartItemDTO.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            totalAmount = totalAmount.add(cartItem.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
 
         }
 
@@ -180,10 +182,11 @@ public class CartService {
         log.info("Retrieved cart item with ID: " + cartItem.getId() + " and Product ID: " + productId + " for removal.");
 
         // delete cart item fron cart and then cart_items table
+        cartItem.setCart(null);
         cart.getCartItems().remove(cartItem);
         cart.setUpdatedAt(LocalDateTime.now());
 
-        cartRepository.save(cart); // save cart to trigger orphanRemoval and delete cart item from cart_items table
+       // cartRepository.save(cart); // save cart to trigger orphanRemoval and delete cart item from cart_items table
 
         // cartItemRepository.delete(cartItem) did not work as expected here for unknown reasons
         log.info("Deleted cart item with ID: " + cartItem.getId() + " and Product ID: " + productId + " from cart.");
@@ -201,15 +204,9 @@ public class CartService {
                 .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
 
         cart.getCartItems().clear();
+
         log.info("Cleared cart for user ID: " + userId);
-        cartRepository.delete(cart);
-
-        CartClearedEvent cartClearedEvent = CartClearedEvent.builder()
-                .userId(userId)
-                .clearedAt(Instant.now())
-                .build();
-        kafkaEventPublisher.publishCartClearedEvent(cartClearedEvent);
-
+        cart.setUpdatedAt(LocalDateTime.now());
 
         return new ResponseMessage("Cart cleared for user ID: " + userId);
     }
@@ -236,15 +233,22 @@ public class CartService {
         CreateOrderDTO createOrderDTO = new CreateOrderDTO();
         createOrderDTO.setUserId(userId);
         createOrderDTO.setItems(orderItems);
-        if (checkoutRequest == null || checkoutRequest.getPaymentMethod() == null) {
+       // Input Validation for checkoutRequest fields,
+        if (checkoutRequest == null || checkoutRequest.getPaymentMethod() == null ) {
             createOrderDTO.setPaymentMethod("UNKNOWN");
-        } else {
-            createOrderDTO.setPaymentMethod(checkoutRequest.getPaymentMethod().name());
+
         }
+        if (checkoutRequest == null || checkoutRequest.getAddressId() == null ) {
+            createOrderDTO.setAddressId(-1L);
+        }
+
+        createOrderDTO.setPaymentMethod(checkoutRequest.getPaymentMethod().name());
         createOrderDTO.setAddressId(checkoutRequest.getAddressId());
 
+
+
         // Call order service to create order
-        OrderCreatedResponse orderCreatedResponse = createOrder(createOrderDTO);
+        OrderCreatedResponse orderCreatedResponse = orderRestClient.placeOrder(userId, createOrderDTO);
         // If order creation failed, throw exception
         if (orderCreatedResponse == null || "FAILED".equals(orderCreatedResponse.getStatus())) {
             throw new OrderServiceDownException("Order Service is currently unavailable. Please try again later.");
@@ -262,30 +266,6 @@ public class CartService {
         return checkoutResponse;
 
     }
-
-    // call create order API in order-service
-    @CircuitBreaker(name = "orderServiceCircuitBreaker", fallbackMethod = "createOrderFallback")
-    public OrderCreatedResponse createOrder(CreateOrderDTO createOrderDTO) {
-        ResponseEntity<OrderCreatedResponse> response = restTemplate.postForEntity(orderServiceUrl + "/api/orders/place-order", createOrderDTO, OrderCreatedResponse.class);
-
-        log.info("Order Service response status: " + response.getStatusCode());
-        log.info("Order Service response body: " + response.getBody());
-
-        return response.getBody();
-    }
-
-    // Fallback method for createOrder
-    public OrderCreatedResponse createOrderFallback(CreateOrderDTO createOrderDTO, Throwable throwable) {
-        return OrderCreatedResponse.builder()
-                .id(-1L)
-                .userId(createOrderDTO.getUserId())
-                .items(new ArrayList<>())
-                .totalAmount(0.0)
-                .status("FAILED")
-                .createdAt(LocalDateTime.now().toString())
-                .build();
-    }
-
 
 
 
