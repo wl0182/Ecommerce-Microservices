@@ -1,6 +1,6 @@
 spring:
   application:
-    name: Shipping-service
+    name: shipping-service
   datasource:
     url: jdbc:postgresql://localhost:5432/ecommerce?currentSchema=shipping_db
     username: appuser
@@ -44,7 +44,7 @@ resilience4j:
         # Number of calls allowed in half-open state
         permitted-number-of-calls-in-half-open-state: 3
         # Maximum time to wait for a call to complete
-        slow-call-duration-threshold: 2s
+        slow-call-duration-threshold: 3s
         # Percentage of slow calls that will trip the circuit
         slow-call-rate-threshold: 50
 
