@@ -33,6 +33,8 @@ public class ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
 
+    private final UserRestClient userRestClient;
+
     @Autowired
     private KafkaPublisher kafkaPublisher;
 
@@ -42,8 +44,9 @@ public class ShipmentService {
     @Value("${services.user-service.url}")
     private String userServiceUrl;
 
-    public ShipmentService(ShipmentRepository shipmentRepository) {
+    public ShipmentService(ShipmentRepository shipmentRepository, UserRestClient userRestClient) {
         this.shipmentRepository = shipmentRepository;
+        this.userRestClient = userRestClient;
     }
 
     public ShipmentDTO getShipmentById(Long id) {
@@ -154,7 +157,7 @@ public class ShipmentService {
     @Transactional
     public ShipmentDTO shipOrder(Long orderId, ShipRequest shipRequest) {
         // Validate User and Address via REST call to User-Service
-        Boolean isValidAddress = validateAddress(shipRequest.getUserId(), shipRequest.getAddressId());
+        Boolean isValidAddress = userRestClient.validateUserAddress(shipRequest.getUserId(),shipRequest.getAddressId());
         if (!isValidAddress) {
             throw new InvalidAddressValidation("Invalid Address  " + shipRequest.getUserId() + ", addressId: " + shipRequest.getAddressId());
 
@@ -200,23 +203,7 @@ public class ShipmentService {
     }
 
 
-    @CircuitBreaker(name = "userServiceCircuitBreaker", fallbackMethod = "validateAddressFallback")
-    public Boolean validateAddress(Long userId, Long addressId) {
-        // REST call to User-Service to validate address
-        String url = userServiceUrl + "/users/" + userId + "/addresses/" + addressId + "/validate";
-        Boolean isValid = restTemplate.getForObject(url, Boolean.class);
-        if (isValid != null) {
-            return isValid;
-        }
-        return false;
-    }
 
-    // Fallback method for Circuit Breaker
-    public Boolean validateAddressFallback(Long userId, Long addressId, Throwable throwable) {
-        // In case of failure, we assume the address is invalid
-        log.info("Fallback: Unable to validate address for userId: " + userId + ", addressId: " + addressId + ". Error: " + throwable.getMessage());
-        return false;
-    }
 
 
 }
