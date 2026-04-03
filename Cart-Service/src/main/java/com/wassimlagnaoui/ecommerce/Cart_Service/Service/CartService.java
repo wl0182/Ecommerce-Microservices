@@ -274,7 +274,9 @@ public class CartService {
         List<Cart> oldCarts = cartRepository.findByUpdatedAtBefore(cutoffTime);
         for (Cart cart : oldCarts) {
             log.info("Cleaning up cart with ID: " + cart.getId() + " for user ID: " + cart.getUserId());
-            cartRepository.delete(cart);
+            cart.getCartItems().clear();
+            cart.setUpdatedAt(LocalDateTime.now());
+
         }
 
     }
