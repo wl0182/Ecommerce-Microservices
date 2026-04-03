@@ -35,7 +35,7 @@ public class PaymentController {
 
     // Issue refund for a payment
     @PostMapping("/refund")
-    public ResponseEntity<IssueRefundResponse> issueRefund(IssueRefundRequest request) {
+    public ResponseEntity<IssueRefundResponse> issueRefund(@RequestBody IssueRefundRequest request) {
         IssueRefundResponse response = paymentService.issueRefund(request);
         return ResponseEntity.ok(response);
     }

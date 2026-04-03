@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "payments")
+@Table(name = "payments", uniqueConstraints = {@UniqueConstraint(columnNames = {"orderId"})})
 public class Payment {
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -37,4 +37,6 @@ public class Payment {
 /*
  * Payment → { id, orderId, amount, method[CARD/WALLET], transactionId, status[INITIATED/SUCCESS/FAILED/REFUNDED], createdAt, updatedAt }
  * Refund → { id, paymentId, reason, amount, createdAt }
+ *
+ * to add uniques contstraint 1 payment par orderId @UniqueConstraint(columnNames = {"orderId"})
  */

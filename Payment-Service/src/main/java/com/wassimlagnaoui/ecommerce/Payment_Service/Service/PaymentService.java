@@ -73,14 +73,12 @@ public class PaymentService {
     }
 
 
-
     @Transactional
     public IssueRefundResponse issueRefund(IssueRefundRequest request) {
-       // find payment by orderId
+        // find payment by orderId
         Payment payment = paymentRepository.findByOrderId(request.getOrderId())
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new PaymentNotFoundException("No payment found for order id: " + request.getOrderId()));
+                .stream().findFirst().orElseThrow(() -> new PaymentNotFoundException("No payment found for order id: " + request.getOrderId()));
+
 
         // create Refund entity and save it // Refund → { id, paymentId, reason, amount, createdAt }
         Refund refund = new Refund();
@@ -100,7 +98,6 @@ public class PaymentService {
                 .build();
 
         kafkaPublisher.publish(KafkaTopics.PAYMENT_REFUNDED, refundEvent);
-
 
 
         return IssueRefundResponse.builder()
@@ -174,15 +171,13 @@ public class PaymentService {
         paymentFailed.setAmount(payment.getAmount());
         paymentFailed.setFailedAt(java.time.Instant.now());
 
-        // transaction manager after commit implementation
-
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 kafkaPublisher.publish(KafkaTopics.PAYMENT_FAILED, paymentFailed);
             }
-        });
+        }); // register a synchronization callback to publish the event only after the transaction commits successfully
 
 
         return ProcessPaymentResponse.builder()
