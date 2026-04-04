@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.Cart_Service.Exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -95,6 +96,21 @@ public class GlobalExceptionHandler {
         errorResponse.put("message", "Invalid input provided");
         errorResponse.put("suggestion", "Please check the input data and try again.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<HashMap<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        HashMap<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            errors.put(error.getField(), error.getDefaultMessage());
+        });
+
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("type", "Validation Error");
+        response.put("Timestamp", System.currentTimeMillis());
+        response.put("Suggestion", "Please correct the input data and try again.");
+        response.put("errors", errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
 

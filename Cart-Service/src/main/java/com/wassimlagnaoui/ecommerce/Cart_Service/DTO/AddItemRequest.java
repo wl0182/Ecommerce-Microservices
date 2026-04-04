@@ -1,5 +1,7 @@
 package com.wassimlagnaoui.ecommerce.Cart_Service.DTO;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,7 +11,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AddItemRequest {
     // { productId, quantity }
+    @NotNull(message = "User ID cannot be null")
     private Long userId;
+    @NotNull(message = "Product ID cannot be null")
     private Long productId;
+    @NotNull(message = "Quantity cannot be null")
+    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
 }

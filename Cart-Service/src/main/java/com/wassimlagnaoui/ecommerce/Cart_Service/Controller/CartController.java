@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.Cart_Service.Controller;
 
 import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.*;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Service.CartService;
+import jakarta.validation.Valid;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class CartController {
     // add item to the cart
 
     @PostMapping("/{userId}/items")
-    public ResponseEntity<CartItemDTO> addItemToCart(@PathVariable Long userId, @RequestBody AddItemRequest addItemRequest) {
+    public ResponseEntity<CartItemDTO> addItemToCart(@PathVariable Long userId,@Valid @RequestBody AddItemRequest addItemRequest) {
         CartItemDTO response = cartService.addItemToCart(userId, addItemRequest);
         return ResponseEntity.ok(response);
     }
@@ -44,7 +45,7 @@ public class CartController {
 
     // checkout
     @PostMapping("/{userId}/checkout")
-    public ResponseEntity<CheckoutResponse> checkout(@PathVariable Long userId, @RequestBody CheckoutRequest checkoutRequest) {
+    public ResponseEntity<CheckoutResponse> checkout(@PathVariable Long userId,@Valid @RequestBody CheckoutRequest checkoutRequest) {
         CheckoutResponse responseMessage = cartService.checkoutCart(userId, checkoutRequest);
         return ResponseEntity.ok(responseMessage);
 
