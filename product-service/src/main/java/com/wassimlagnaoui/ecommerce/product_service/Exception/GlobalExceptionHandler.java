@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.product_service.Exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,6 +44,20 @@ public class GlobalExceptionHandler {
         errorResponse.put("message", ex.getMessage());
         errorResponse.put("suggestion", "Please check Kafka server and connectivity.");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
+
+    // Handle MethodArgumentNotValidException for validation errors
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<HashMap<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        HashMap<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            errors.put(error.getField(), error.getDefaultMessage());
+        });
+
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("type", "Validation Error");
+        response.put("errors", errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
 }
