@@ -5,6 +5,7 @@ import com.wassimlagnaoui.ecommerce.product_service.DTO.CreateCategoryDTO;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.MessageDTO;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +29,7 @@ public class CategoryController {
 
     // create Category
     @PostMapping("/create")
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CreateCategoryDTO createCategoryDTO) {
+    public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CreateCategoryDTO createCategoryDTO) {
         CategoryDTO categoryDTO = productService.createCategory(createCategoryDTO);
         return ResponseEntity.ok(categoryDTO);
     }
@@ -44,7 +45,7 @@ public class CategoryController {
 
     // update Category
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody CreateCategoryDTO createCategoryDTO) {
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id,@Valid @RequestBody CreateCategoryDTO createCategoryDTO) {
         CategoryDTO categoryDTO = productService.updateCategory(id, createCategoryDTO);
         return ResponseEntity.ok(categoryDTO);
     }

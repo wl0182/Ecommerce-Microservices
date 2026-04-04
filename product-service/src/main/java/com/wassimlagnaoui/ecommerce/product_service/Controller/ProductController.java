@@ -3,6 +3,7 @@ package com.wassimlagnaoui.ecommerce.product_service.Controller;
 
 import com.wassimlagnaoui.ecommerce.product_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.product_service.Service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductDTO> createProduct(@RequestBody CreateProductDTO createProductDTO){
+    public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody CreateProductDTO createProductDTO){
         ProductDTO productDTO = productService.createProduct(createProductDTO);
         return ResponseEntity.ok(productDTO);
     }
@@ -39,21 +40,21 @@ public class ProductController {
 
    // update product
     @PatchMapping("/{id}")
-    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody CreateProductDTO createProductDTO) {
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id,@Valid @RequestBody CreateProductDTO createProductDTO) {
         ProductDTO updatedProduct = productService.updateProduct(id, createProductDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 
     // increment stock
     @PutMapping("/{id}/increment-stock")
-    public ResponseEntity<TransactionDTO> incrementStock(@PathVariable("id") Long id,@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
+    public ResponseEntity<TransactionDTO> incrementStock(@PathVariable("id") Long id,@Valid @RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
         TransactionDTO updatedProduct = productService.incrementInventory(id,updateProductInventoryDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 
     // decrement stock
     @PutMapping("/{id}/decrement-stock")
-    public ResponseEntity<TransactionDTO> decrementStock(@PathVariable("id") Long id,@RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
+    public ResponseEntity<TransactionDTO> decrementStock(@PathVariable("id") Long id,@Valid @RequestBody UpdateProductInventoryDTO updateProductInventoryDTO) {
         TransactionDTO updatedProduct = productService.decrementInventory(id,updateProductInventoryDTO);
         return ResponseEntity.ok(updatedProduct);
     }
@@ -65,7 +66,6 @@ public class ProductController {
         return ResponseEntity.ok(inventoryDTO);
 
     }
-
 
 
 
