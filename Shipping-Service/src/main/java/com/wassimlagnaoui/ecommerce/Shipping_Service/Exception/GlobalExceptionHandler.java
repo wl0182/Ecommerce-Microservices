@@ -3,6 +3,7 @@ package com.wassimlagnaoui.ecommerce.Shipping_Service.Exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -40,5 +41,19 @@ public class GlobalExceptionHandler {
         errorResponse.put("timestamp", String.valueOf(System.currentTimeMillis()));
         errorResponse.put("Info", "The provided address is invalid");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
+
+    // handle MehtodArgumentNotValidException for validation errors
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<HashMap<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("error", "Validation failed for the request body.");
+        response.put("status", HttpStatus.BAD_REQUEST.toString());
+        response.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        response.put("info", "Please check the request body for validation errors and try again.");
+        response.put("validationErrors", ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList());
+        return ResponseEntity.badRequest().body(response);
     }
 }

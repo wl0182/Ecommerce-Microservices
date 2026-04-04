@@ -2,7 +2,10 @@ package com.wassimlagnaoui.ecommerce.Shipping_Service.Controller;
 
 import com.wassimlagnaoui.ecommerce.Shipping_Service.DTO.ShipRequest;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.DTO.ShipmentDTO;
+import com.wassimlagnaoui.ecommerce.Shipping_Service.DTO.UpdateStatusRequest;
+import com.wassimlagnaoui.ecommerce.Shipping_Service.DTO.UpdateStatusResponse;
 import com.wassimlagnaoui.ecommerce.Shipping_Service.Service.ShipmentService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,9 +33,17 @@ public class ShipmentController {
 
     // ship order
     @PostMapping("/ship/order/{orderId}")
-    public ResponseEntity<ShipmentDTO> shipOrder(@PathVariable Long orderId, @RequestBody ShipRequest shipRequest) {
+    public ResponseEntity<ShipmentDTO> shipOrder(@PathVariable Long orderId,@Valid @RequestBody ShipRequest shipRequest) {
         ShipmentDTO shipmentDTO = shipmentService.shipOrder(orderId, shipRequest);
         return ResponseEntity.ok(shipmentDTO);
     }
+
+    // update shipment status
+    @PutMapping("/update-status/{shipmentId}")
+    public ResponseEntity<UpdateStatusResponse> updateShipmentStatus(@Valid @RequestBody UpdateStatusRequest updateStatusRequest, @PathVariable Long shipmentId) {
+        UpdateStatusResponse shipmentDTO = shipmentService.updateShipmentStatus(updateStatusRequest, shipmentId);
+        return ResponseEntity.ok(shipmentDTO);
+    }
+
 
 }
