@@ -1,5 +1,6 @@
 package com.wassimlagnaoui.ecommerce.Payment_Service.Exception;
 
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -25,6 +26,20 @@ public class GlobalExceptionHandler {
         response.put("status", "404");
         response.put("type", "Refund Not Found");
         response.put("solution", "Please check the refund ID and try again.");
+        return response;
+    }
+
+    // handle MthodArgumentNotValidException
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public HashMap<String, Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("error", "Validation failed for the request body.");
+        response.put("status", "400");
+        response.put("type", "Bad Request");
+        response.put("solution", "Please check the request body for validation errors and try again.");
+        response.put("validationErrors", ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList());
         return response;
     }
 }

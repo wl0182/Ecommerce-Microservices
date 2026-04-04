@@ -4,6 +4,7 @@ import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.IssueRefundRequest;
 import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.IssueRefundResponse;
 import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.PaymentDTO;
 import com.wassimlagnaoui.ecommerce.Payment_Service.Service.PaymentService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentDTO);
     }
 
-    // Get Payment by Order Id
+    // Get Payment by OrderId
     @GetMapping("/order/{orderId}")
     public ResponseEntity<List<PaymentDTO>> getPaymentsByOrderId(@PathVariable Long orderId) {
         java.util.List<PaymentDTO> paymentDTOs = paymentService.getPaymentsByOrderId(orderId);
@@ -35,7 +36,7 @@ public class PaymentController {
 
     // Issue refund for a payment
     @PostMapping("/refund")
-    public ResponseEntity<IssueRefundResponse> issueRefund(@RequestBody IssueRefundRequest request) {
+    public ResponseEntity<IssueRefundResponse> issueRefund(@Valid @RequestBody IssueRefundRequest request) {
         IssueRefundResponse response = paymentService.issueRefund(request);
         return ResponseEntity.ok(response);
     }
