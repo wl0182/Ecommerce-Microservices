@@ -4,6 +4,7 @@ package com.wassimlagnaoui.ecommerce.order_service.Controller;
 import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderStatus;
 import com.wassimlagnaoui.ecommerce.order_service.Service.OrderService;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.PathParam;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 public class OrderController {
     // Implement order-related endpoints here
     private final OrderService orderService;
@@ -25,7 +26,7 @@ public class OrderController {
 
     // create new Order
     @PostMapping("/place-order")
-    public ResponseEntity<OrderCreatedResponse> createOrder(@PathParam("userId") Long userId, @RequestBody CreateOrderDTO createOrderDTO) {
+    public ResponseEntity<OrderCreatedResponse> createOrder(@PathParam("userId") Long userId,@Valid @RequestBody CreateOrderDTO createOrderDTO) {
         OrderCreatedResponse orderDTO = orderService.createOrder(userId,createOrderDTO);
         return ResponseEntity.ok(orderDTO);
     }
@@ -72,7 +73,7 @@ public class OrderController {
 
     // Update Order Status manually (for testing purposes)
     @PutMapping("/{orderId}/update-status")
-    public ResponseEntity<OrderDTO> updateOrderStatus(@PathVariable("orderId") Long orderId, @RequestBody OrderStatusDTO status) {
+    public ResponseEntity<OrderDTO> updateOrderStatus(@PathVariable("orderId") Long orderId,@Valid @RequestBody OrderStatusDTO status) {
         OrderDTO updatedStatus = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(updatedStatus);
     }

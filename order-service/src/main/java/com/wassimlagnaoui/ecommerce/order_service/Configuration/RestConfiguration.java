@@ -1,9 +1,13 @@
 package com.wassimlagnaoui.ecommerce.order_service.Configuration;
 
+
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
+
+import java.time.Duration;
 
 @Configuration
 public class RestConfiguration {
@@ -11,6 +15,32 @@ public class RestConfiguration {
     @Bean
     @LoadBalanced
     public RestTemplate restTemplate() {
+       // add timeout settings
         return new RestTemplate();
     }
+
+
+   @Bean
+   @LoadBalanced
+   public RestClient.Builder restClientBuilder() {
+
+       var httpClient = java.net.http.HttpClient.newBuilder()
+               .connectTimeout(Duration.ofSeconds(5))
+               .build();
+
+       var requestFactory = new org.springframework.http.client.JdkClientHttpRequestFactory(httpClient);
+       requestFactory.setReadTimeout(Duration.ofSeconds(5));
+
+       return RestClient.builder()
+               .requestFactory(requestFactory);
+   }
+
+    @Bean
+    public RestClient restClient(RestClient.Builder builder) {
+        return builder.build();
+    }
+
+
+
+
 }

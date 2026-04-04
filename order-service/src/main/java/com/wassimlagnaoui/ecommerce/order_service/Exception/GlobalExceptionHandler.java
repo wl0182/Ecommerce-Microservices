@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.order_service.Exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -38,6 +39,20 @@ public class GlobalExceptionHandler {
         response.put("timestamp", String.valueOf(System.currentTimeMillis()));
         response.put("info", "The provided order status is invalid, please check and try again.");
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<HashMap<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("error", "Validation failed for the request body.");
+        response.put("status", HttpStatus.BAD_REQUEST.toString());
+        response.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        response.put("info", "Please check the request body for validation errors and try again.");
+        response.put("validationErrors", ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList());
+        return ResponseEntity.badRequest().body(response);
+
     }
 
 
