@@ -5,6 +5,7 @@ import com.wassimlagnaoui.ecommerce.user_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
 import com.wassimlagnaoui.ecommerce.user_service.Service.UserService;
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -27,11 +28,7 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserDetails> getUserById(@PathVariable Long id) {
         UserDetails userDetails = userService.getUserById(id);
-        if (userDetails != null) {
-            return ResponseEntity.ok(userDetails);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+       return ResponseEntity.ok(userDetails);
     }
     // get all users
     @GetMapping("/all")
@@ -42,7 +39,7 @@ public class UserController {
 
     // Create user
     @PostMapping("/deprecated-create")
-    public ResponseEntity<UserDetails> createUser(@RequestBody CreateUserDTO userDetails) {
+    public ResponseEntity<UserDetails> createUser(@Valid @RequestBody CreateUserDTO userDetails) {
         UserDetails createdUser = userService.createUser(userDetails);
         return ResponseEntity.ok(createdUser);
     }
@@ -50,13 +47,13 @@ public class UserController {
 
     // Register user
     @PostMapping("/register")
-    public ResponseEntity<UserDetails> registerUser(@RequestBody RegisterUserDTO registerUserDTO) {
+    public ResponseEntity<UserDetails> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO) {
         UserDetails registeredUser = userService.registerUser(registerUserDTO);
         return ResponseEntity.ok(registeredUser);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> loginUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<LoginResponse> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
         LoginResponse loginResponse = userService.loginUser(loginRequest);
         if (loginResponse != null) {
             return ResponseEntity.ok(loginResponse);
@@ -67,7 +64,7 @@ public class UserController {
 
     //update user
     @PutMapping("/{id}")
-    public ResponseEntity<UserDetails> updateUser(@PathVariable("id") Long id, @RequestBody UpdateUserDTO updateUserDTO) {
+    public ResponseEntity<UserDetails> updateUser(@PathVariable("id") Long id,@Valid @RequestBody UpdateUserDTO updateUserDTO) {
         UserDetails updatedUser = userService.updateUser(id, updateUserDTO);
         return ResponseEntity.ok(updatedUser);
 
@@ -83,7 +80,7 @@ public class UserController {
 
     // add address to user
     @PostMapping("/{id}/addresses")
-    public ResponseEntity<AddressDTO> addAddressToUser(@PathVariable Long id, @RequestBody AddAddressDTO addAddressDTO) {
+    public ResponseEntity<AddressDTO> addAddressToUser(@PathVariable Long id, @Valid @RequestBody AddAddressDTO addAddressDTO) {
         AddressDTO addressDTO = userService.addAddressToUser(id, addAddressDTO);
         return ResponseEntity.ok(addressDTO);
     }
