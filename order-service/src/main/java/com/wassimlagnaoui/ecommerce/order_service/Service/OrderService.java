@@ -39,18 +39,10 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
 
 
-    // adding RestTemplate to call other services
-    @Autowired
-    private RestTemplate restTemplate;
-
     @Autowired
     private KafkaPublisher kafkaPublisher;
 
     private final ProductRestClient productRestClient;
-
-
-    @Value("${services.product-service.url}")
-    private String productServiceUrl;
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, ProductRestClient productRestClient) {
