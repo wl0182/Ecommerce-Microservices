@@ -55,5 +55,15 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(ProductServiceError.class)
+    public ResponseEntity<HashMap<String, String>> handleProductServiceError(ProductServiceError ex) {
+        HashMap<String, String> response = new HashMap<>();
+        response.put("error", ex.getMessage());
+        response.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
+        response.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        response.put("info", "An error occurred while communicating with the Product Service. Please try again later.");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
 
 }
