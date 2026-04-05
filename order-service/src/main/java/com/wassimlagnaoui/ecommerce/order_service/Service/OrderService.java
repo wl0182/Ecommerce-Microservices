@@ -46,15 +46,18 @@ public class OrderService {
     @Autowired
     private KafkaPublisher kafkaPublisher;
 
+    private final ProductRestClient productRestClient;
+
 
     @Value("${services.product-service.url}")
     private String productServiceUrl;
 
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, ProductRestClient productRestClient) {
         this.orderItemRepository = orderItemRepository;
         this.orderRepository = orderRepository;
 
+        this.productRestClient = productRestClient;
     }
 
     @Transactional
@@ -72,7 +75,7 @@ public class OrderService {
         List<Long> productIds = extractProductIds(createOrderDTO.getItems());
 
         // get product details by list of ids
-        List<ProductDTO> products = getProductsByIds(productIds);
+        List<ProductDTO> products = productRestClient.getProductsByIds(productIds);
 
         // map products by id
         HashMap<Long,ProductDTO> productMap = mapProductsById(products);
@@ -159,7 +162,7 @@ public class OrderService {
 
 
         // get product details by list of ids
-        List<ProductDTO> products = getProductsByIds(productIds);
+        List<ProductDTO> products = productRestClient.getProductsByIds(productIds);
         HashMap<Long, ProductDTO> productMap = mapProductsById(products);
 
 
@@ -254,7 +257,7 @@ public class OrderService {
                 .collect(Collectors.toList());
 
         // Fetch product details
-        List<ProductDTO> products = getProductsByIds(productIds);
+        List<ProductDTO> products = productRestClient.getProductsByIds(productIds);
         HashMap<Long, ProductDTO> productMap = mapProductsById(products);
 
 
@@ -304,53 +307,13 @@ public class OrderService {
     }
 
     public List<ProductDTO> getProductsByIdsService(List<Long> productIds) {
-        return getProductsByIds(productIds);
+        return productRestClient.getProductsByIds(productIds);
     }
 
     public ProductDTO getProductByIdService(Long productId) {
-        return getProductById(productId);
+        return productRestClient.getProductById(productId);
     }
 
-
-    @CircuitBreaker(name = "product-service", fallbackMethod = "getProductByIdFallback")
-    public ProductDTO getProductById(Long productId) {
-        String url = productServiceUrl + "/products/" + productId;
-        return restTemplate.getForObject(url, ProductDTO.class);
-    }
-
-    @CircuitBreaker(name = "product-service", fallbackMethod = "getProductsByIdFallback")
-    public List<ProductDTO> getProductsByIds(List<Long> productIds) {
-        String url = productServiceUrl + "/products/bulk" ;
-        ResponseEntity<ProductDTO[]> response = restTemplate.postForEntity(url,productIds,ProductDTO[].class);
-        return Arrays.asList(response.getBody());
-    }
-
-
-
-    private ProductDTO getProductByIdFallback(Long productId, Throwable throwable) {
-       log.info("Fallback executed for getProductById with productId: " + productId + " due to: " + throwable.getMessage());
-        return ProductDTO.builder()
-                .id(productId)
-                .name("Unknown Product")
-                .description("Product information is currently unavailable.")
-                .price(BigDecimal.valueOf(0.0))
-                .build();
-    }
-
-    private List<ProductDTO> getProductsByIdFallback(List<Long> productIds, Throwable throwable) {
-        log.info("Fallback executed for getProductsByIds with productIds: " + productIds + " due to: " + throwable.getMessage());
-        List<ProductDTO> fallbackProducts = new ArrayList<>();
-        for (Long productId : productIds) {
-            fallbackProducts.add(ProductDTO.builder()
-                    .id(productId)
-                    .name("Unknown Product")
-                    .description("Product information is currently unavailable.")
-                    .price(BigDecimal.valueOf(0.0))
-                    .build());
-        }
-        return fallbackProducts;
-
-    }
 
     private HashMap<Long,ProductDTO> mapProductsById(List<ProductDTO> products){
         HashMap<Long,ProductDTO> productMap = new HashMap<>();
