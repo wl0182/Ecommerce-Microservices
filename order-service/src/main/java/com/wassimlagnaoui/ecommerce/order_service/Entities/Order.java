@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -21,18 +22,33 @@ public class Order {
     private Long userId;
 
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    List<OrderItem> orderItems;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL,orphanRemoval = true ,fetch = FetchType.LAZY)
+    private List<OrderItem> orderItems= new ArrayList<>();
 
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    @Column(precision = 10, scale = 2)
+    @Column(precision = 13, scale = 2)
     private BigDecimal totalAmount;
 
     private LocalDateTime lastUpdated;
+
+    // add item helper method to maintain bidirectional relationship
+    public void addOrderItem(OrderItem item) {
+        if (item == null) {
+            throw new IllegalArgumentException("Order item cannot be null");
+        }
+        orderItems.add(item);
+        item.setOrder(this);
+    }
+
+     // remove item helper method to maintain bidirectional relationship
+    public void removeOrderItem(OrderItem item) {
+        orderItems.remove(item);
+        item.setOrder(null);
+    }
 
 
 }
