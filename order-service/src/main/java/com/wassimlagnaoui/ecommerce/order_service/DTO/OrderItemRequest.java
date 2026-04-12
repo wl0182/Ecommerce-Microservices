@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,4 +18,6 @@ public class OrderItemRequest {
     private Long productId;
     @NotNull(message = "Quantity cannot be null")
     private int quantity;
+
+    private BigDecimal price; // Optional: Include price if needed for order processing
 }
