@@ -17,7 +17,6 @@ import java.math.BigDecimal;
 public class CheckoutRequest {
 
     @Enumerated(EnumType.STRING)
-    @NotBlank(message = "Payment method is required")
     private PaymentMethod paymentMethod; // to be validated against PaymentMethod enum in Cart-Service
     @NotNull(message = "Address ID is required")
     private Long addressId;

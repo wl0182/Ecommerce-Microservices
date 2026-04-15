@@ -10,9 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AddItemRequest {
-    // { productId, quantity }
-    @NotNull(message = "User ID cannot be null")
-    private Long userId;
+
     @NotNull(message = "Product ID cannot be null")
     private Long productId;
     @NotNull(message = "Quantity cannot be null")
