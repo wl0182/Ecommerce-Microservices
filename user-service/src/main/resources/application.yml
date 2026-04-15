@@ -8,7 +8,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
@@ -19,7 +19,10 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer # key serializer class
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # value serializer class for JSON
       acks: all # ensure message durability, all means all replicas must acknowledge the message
-      retries: 3 # number of retries on failure to send a message
+      retries: 1 # number of retries on failure to send a message
+
+
+
 
     consumer: # consumer-specific configurations
       group-id: user-service-group # consumer group id for load balancing, all instances with same group id share the load
