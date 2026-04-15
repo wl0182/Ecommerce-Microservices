@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class ConfigurationCustom {
 
+    @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -23,6 +24,12 @@ public class ConfigurationCustom {
 
     @Bean
     public RestClient restClient() {
+        return RestClient.builder().build();
+    }
+
+    // RestClient Bean
+    @Bean
+    public RestClient restClientBean() {
         return RestClient.builder().build();
     }
 }
