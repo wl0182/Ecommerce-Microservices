@@ -2,13 +2,12 @@ package com.wassimlagnaoui.ecommerce.user_service.Model;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -23,13 +22,13 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL, fetch = FetchType.LAZY,orphanRemoval = true)
     private List<Address> addresses;
 
     private String phoneNumber;
 
     // Hashed password
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60)
     private String password;
 
 
