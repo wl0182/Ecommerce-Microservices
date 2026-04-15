@@ -78,14 +78,14 @@ public class UserController {
     }
 
 
-    // add address to user
+
     @PostMapping("/{id}/addresses")
     public ResponseEntity<AddressDTO> addAddressToUser(@PathVariable Long id, @Valid @RequestBody AddAddressDTO addAddressDTO) {
         AddressDTO addressDTO = userService.addAddressToUser(id, addAddressDTO);
         return ResponseEntity.ok(addressDTO);
     }
 
-    // validate address
+    // validate address curl command localhost 7001 : GET http://localhost:7001/api/users/1/addresses/1/validate
     @GetMapping("/{userId}/addresses/{addressId}/validate")
     public ResponseEntity<Boolean> validateAddress(@PathVariable Long userId, @PathVariable Long addressId) {
         Boolean isValid = userService.validateAddress(userId, addressId);

@@ -1,17 +1,23 @@
 package com.wassimlagnaoui.ecommerce.user_service.Service;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wassimlagnaoui.common_events.Events.UserService.UserRegisteredEvent;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.user_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.user_service.Exceptions.InvalidLoginException;
 import com.wassimlagnaoui.ecommerce.user_service.Exceptions.UserNotFoundException;
 import com.wassimlagnaoui.ecommerce.user_service.Model.Address;
+import com.wassimlagnaoui.ecommerce.user_service.Model.EventStatus;
 import com.wassimlagnaoui.ecommerce.user_service.Model.User;
+import com.wassimlagnaoui.ecommerce.user_service.Model.UserOutboxEvent;
+import com.wassimlagnaoui.ecommerce.user_service.Repository.UserOutboxRepository;
 import com.wassimlagnaoui.ecommerce.user_service.Repository.UserRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -21,22 +27,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserOutboxRepository userOutboxRepository;
 
     // inject PasswordEncoder
 
+
+    private final ObjectMapper objectMapper;
 
     private final BCryptPasswordEncoder passwordEncoder;
 
 
     private final  KafkaTemplate<String, Object> kafkaTemplate;
 
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, KafkaTemplate<String, Object> kafkaTemplate) {
+    public UserService(UserRepository userRepository, UserOutboxRepository userOutboxRepository, ObjectMapper objectMapper, BCryptPasswordEncoder passwordEncoder, KafkaTemplate<String, Object> kafkaTemplate) {
         this.userRepository = userRepository;
+        this.userOutboxRepository = userOutboxRepository;
+        this.objectMapper = objectMapper;
         this.passwordEncoder = passwordEncoder;
         this.kafkaTemplate = kafkaTemplate;
     }
@@ -46,7 +59,7 @@ public class UserService {
     public UserDetails getUserById(Long id) {
         return userRepository.findById(id)
                 .map(user -> new UserDetails(user.getId(), user.getEmail(), user.getName(), user.getPhoneNumber()))
-                .orElse(null);
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
     }
 
     // get all users
@@ -71,6 +84,7 @@ public class UserService {
     }
 
     // register user with email and password
+
     @Transactional
     public UserDetails registerUser(RegisterUserDTO registerUserDTO){
         User user = new User();
@@ -93,23 +107,37 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         UserRegisteredEvent event = new UserRegisteredEvent();
+        event.setEventId(UUID.randomUUID().toString());
+        event.setEventTimestamp(LocalDateTime.now());
         event.setUserId(savedUser.getId().toString());
         event.setEmail("lagnaouiw@gmail.com");
         event.setRegisteredAt(LocalDateTime.now().toString());
         event.setName(savedUser.getName());
 
-        kafkaTemplate.send(KafkaTopics.USER_REGISTERED, event).whenComplete((result, throwable) ->{
-                if(throwable != null){
-                    System.out.println("Failed to send event to topic " + KafkaTopics.USER_REGISTERED + ": " + throwable.getMessage());
-                } else {
-                    System.out.println("Event sent to topic " + KafkaTopics.USER_REGISTERED + " with offset " + result.getRecordMetadata().offset());
-                }
-        } ); // send event to kafka topic
+        // use Outbox pattern to save event in the database
+        UserOutboxEvent outboxEvent = new UserOutboxEvent();
+        outboxEvent.setId(UUID.randomUUID());
+        outboxEvent.setAggregateId(savedUser.getId().toString());
+        outboxEvent.setEventType(KafkaTopics.USER_REGISTERED);
+        try {
+            outboxEvent.setPayload(objectMapper.writeValueAsString(event));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        outboxEvent.setStatus(EventStatus.PENDING);
+        outboxEvent.setCreatedAt(LocalDateTime.now());
+
+        userOutboxRepository.save(outboxEvent);
+
+
 
         return new UserDetails(savedUser.getId(), savedUser.getEmail(), savedUser.getName(), savedUser.getPhoneNumber());
 
     }
     // simulate login by decoding password and comparing it to the stored password
+
+
+
     @Transactional
      public LoginResponse loginUser(LoginRequest loginRequest){
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UserNotFoundException("User not found with email: " + loginRequest.getEmail()));
