@@ -22,11 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.math.BigDecimal;
-
 @Slf4j
 @Service
-public class HandleEvents {
+public class OrderEventHandler {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -34,7 +32,7 @@ public class HandleEvents {
     @Autowired
     private KafkaPublisher kafkaPublisher;
 
-    public HandleEvents(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
+    public OrderEventHandler(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
     }
@@ -81,7 +79,7 @@ public class HandleEvents {
         order.setStatus(OrderStatus.REFUNDED); // assuming refunded orders are marked as CANCELED
         orderRepository.save(order);
 
-        log.info("Order with id: {} updated to Canceled status after payment refunded event", order.getId());
+        log.info("Order with id: {} updated to Refunded status after payment refunded event", order.getId());
     }
 
     // Handle payment failed event
