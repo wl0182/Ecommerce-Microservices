@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.order_service.Exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -62,6 +63,47 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
         response.put("timestamp", String.valueOf(System.currentTimeMillis()));
         response.put("info", "An error occurred while communicating with the Product Service. Please try again later.");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
+    // handle OrderItemsEmptyException
+    @ExceptionHandler(OrderItemsListEmpty.class)
+    public ResponseEntity<HashMap<String, String>> handleOrderItemsEmptyException(OrderItemsListEmpty ex) {
+        HashMap<String, String> response = new HashMap<>();
+        response.put("error", ex.getMessage());
+        response.put("status", HttpStatus.BAD_REQUEST.toString());
+        response.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        response.put("info", "The order must contain at least one item. Please add items to the order and try again.");
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<HashMap<String, String>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        HashMap<String, String> response = new HashMap<>();
+        response.put("error", "Malformed JSON request: " + ex.getMessage());
+        response.put("status", HttpStatus.BAD_REQUEST.toString());
+        response.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        response.put("info", "The request body contains malformed JSON. Please check the syntax and try again.");
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(AddressUnavailable.class)
+    public ResponseEntity<HashMap<String, String>> handleAddressUnavailableException(AddressUnavailable ex) {
+        HashMap<String, String> response = new HashMap<>();
+        response.put("error", ex.getMessage());
+        response.put("status", HttpStatus.NOT_FOUND.toString());
+        response.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        response.put("info", "The specified address is currently unavailable. Please verify the address and try again later.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(UserServiceError.class)
+    public ResponseEntity<HashMap<String, String>> handleUserServiceError(UserServiceError ex){
+        HashMap<String, String> response = new HashMap<>();
+        response.put("error", ex.getMessage());
+        response.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
+        response.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        response.put("info", "An error occurred while communicating with the User Service. Please try again later.");
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
     }
 
