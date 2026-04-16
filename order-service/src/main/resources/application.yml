@@ -64,10 +64,16 @@ resilience4j:
         # Number of calls allowed in half-open state
         permitted-number-of-calls-in-half-open-state: 3
         # Maximum time to wait for a call to complete
-        slow-call-duration-threshold: 2s
+        slow-call-duration-threshold: 3s
         # Percentage of slow calls that will trip the circuit
         slow-call-rate-threshold: 50
-
+      user-service:
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        slow-call-duration-threshold: 4s
+        slow-call-rate-threshold: 50
   # Retry configuration for transient failures
   retry:
     instances:
@@ -78,7 +84,10 @@ resilience4j:
         wait-duration: 1s
         # Exponential backoff multiplier
         exponential-backoff-multiplier: 2
-
+      user-service:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
   # Rate Limiter configuration to control request rate
   ratelimiter:
     instances:

@@ -27,7 +27,7 @@ public class OrderController {
     // create new Order
     @PostMapping("/place-order")
     public ResponseEntity<OrderCreatedResponse> createOrder(@PathParam("userId") Long userId,@Valid @RequestBody CreateOrderDTO createOrderDTO) {
-        OrderCreatedResponse orderDTO = orderService.createOrder(userId,createOrderDTO);
+        OrderCreatedResponse orderDTO = orderService.placeOrder(userId,createOrderDTO);
         return ResponseEntity.ok(orderDTO);
     }
 
