@@ -1,5 +1,5 @@
 package com.wassimlagnaoui.ecommerce.order_service.Entities;
 
 public enum OrderStatus {
-   PENDING, PAID, SHIPPED, CANCELED , DELIVERED, REFUNDED
+   PENDING, PAID, SHIPPED, CANCELED ,IN_TRANSIT ,DELIVERED, REFUNDED
 }

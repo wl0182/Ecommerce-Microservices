@@ -1,15 +1,21 @@
 package com.wassimlagnaoui.ecommerce.order_service.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.Order;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderItem;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderStatus;
+import com.wassimlagnaoui.ecommerce.order_service.Entities.PaymentMethod;
+import com.wassimlagnaoui.ecommerce.order_service.Exception.AddressUnavailable;
+import com.wassimlagnaoui.ecommerce.order_service.Exception.OrderItemsListEmpty;
 import com.wassimlagnaoui.ecommerce.order_service.Exception.OrderNotFound;
+import com.wassimlagnaoui.ecommerce.order_service.Exception.UserServiceError;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderItemRepository;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.persistence.Convert;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +44,8 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
 
+    private final UserRestClient userRestClient;
+
 
     @Autowired
     private KafkaPublisher kafkaPublisher;
@@ -45,9 +53,10 @@ public class OrderService {
     private final ProductRestClient productRestClient;
 
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, ProductRestClient productRestClient) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, UserRestClient userRestClient, ProductRestClient productRestClient) {
         this.orderItemRepository = orderItemRepository;
         this.orderRepository = orderRepository;
+        this.userRestClient = userRestClient;
 
         this.productRestClient = productRestClient;
     }
@@ -57,7 +66,7 @@ public class OrderService {
         Order order = new Order();
         List<OrderItem> orderItems = new ArrayList<>();
 
-        order.setUserId(createOrderDTO.getUserId());
+        order.setUserId(userId);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         order.setLastUpdated(LocalDateTime.now());
@@ -111,7 +120,7 @@ public class OrderService {
                 .orderId(String.valueOf(savedOrder.getId()))
                 .userId(String.valueOf(savedOrder.getUserId()))
                 .totalAmount(savedOrder.getTotalAmount())
-                .paymentMethod(createOrderDTO.getPaymentMethod())
+                .paymentMethod(createOrderDTO.getPaymentMethod().name())
                 .items(orderItems.stream().map(oi -> OrderCreateEvent.Item.builder()
                         .productId(String.valueOf(oi.getProductId()))
                         .quantity(oi.getQuantity())
@@ -134,10 +143,81 @@ public class OrderService {
                 .id(savedOrder.getId())
                 .userId(savedOrder.getUserId())
                 .items(itemResponses)
-                .totalAmount(savedOrder.getTotalAmount().doubleValue())
+                .totalAmount(savedOrder.getTotalAmount())
                 .status(savedOrder.getStatus().name())
                 .createdAt(savedOrder.getOrderDate().toString())
                 .build(); // { id, userId, items:[{ productId, name, quantity, price }], totalAmount, status, createdAt, updatedAt }
+    }
+
+    @Transactional
+    public OrderCreatedResponse placeOrder(Long userId, CreateOrderDTO createOrderDTO) {
+        // Validate if items are present in the request
+        if (createOrderDTO.getItems() == null || createOrderDTO.getItems().isEmpty()) {
+            log.error("Order creation failed for user {}: No items provided", userId);
+            throw new OrderItemsListEmpty("Order must contain at least one item");
+        }
+
+        // validate if address id is valid
+        if (!userRestClient.validateUserAddress(userId, createOrderDTO.getAddressId())) {
+            log.error("Order creation failed for user {}: Invalid address id {}", userId, createOrderDTO.getAddressId());
+            throw new AddressUnavailable("Invalid address id: " + createOrderDTO.getAddressId() + " for user with id: " + userId);
+        }
+
+        // Build Order and OrderItems and save to database
+        Order order = new Order();
+        List<OrderItem> orderItems = new ArrayList<>();
+        order.setUserId(userId);
+        order.setOrderDate(LocalDateTime.now());
+        order.setStatus(OrderStatus.PENDING);
+        order.setLastUpdated(LocalDateTime.now());
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        for (OrderItemRequest itemRequest : createOrderDTO.getItems()) {
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProductId(itemRequest.getProductId());
+            orderItem.setQuantity(itemRequest.getQuantity());
+            orderItem.setPrice(itemRequest.getPrice());
+            order.addOrderItem(orderItem);
+            // calculate total amount
+            totalAmount = totalAmount.add(orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())));
+        }
+
+        order.setTotalAmount(totalAmount);
+        Order savedOrder = orderRepository.save(order);
+
+        // Publish OrderCreateEvent to Kafka
+        OrderCreateEvent orderCreateEvent = createOrderEvent(savedOrder, createOrderDTO.getPaymentMethod());
+        // Publish the event after committing the transaction
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                kafkaPublisher.publish(KafkaTopics.ORDER_CREATED, orderCreateEvent);
+            }
+        });
+
+        return OrderCreatedResponse.builder()
+                .id(savedOrder.getId())
+                .userId(savedOrder.getUserId())
+                .totalAmount(savedOrder.getTotalAmount())
+                .status(savedOrder.getStatus().name())
+                .createdAt(savedOrder.getOrderDate().toString())
+                .build(); // { id, userId, totalAmount, status, createdAt }
+
+    }
+
+    public OrderCreateEvent createOrderEvent(Order order,PaymentMethod paymentMethod){
+        return OrderCreateEvent.builder()
+                .orderId(String.valueOf(order.getId()))
+                .userId(String.valueOf(order.getUserId()))
+                .totalAmount(order.getTotalAmount())
+                .paymentMethod(paymentMethod.name()) // Assuming payment method is credit card for this example
+                .items(order.getOrderItems().stream().map(oi -> OrderCreateEvent.Item.builder()
+                        .productId(String.valueOf(oi.getProductId()))
+                        .quantity(oi.getQuantity())
+                        .price(oi.getPrice())
+                        .build()).collect(Collectors.toList()))
+                .createdAt(order.getOrderDate().toString())
+                .build();
     }
 
 
