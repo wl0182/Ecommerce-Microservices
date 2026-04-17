@@ -1,19 +1,19 @@
 package com.wassimlagnaoui.ecommerce.product_service.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wassimlagnaoui.common_events.DummyEvent;
 import com.wassimlagnaoui.common_events.Events.ProductService.ProductUpdatedEvent;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.product_service.DTO.*;
-import com.wassimlagnaoui.ecommerce.product_service.Domain.Category;
-import com.wassimlagnaoui.ecommerce.product_service.Domain.InventoryTransaction;
-import com.wassimlagnaoui.ecommerce.product_service.Domain.Product;
-import com.wassimlagnaoui.ecommerce.product_service.Domain.TransactionType;
+import com.wassimlagnaoui.ecommerce.product_service.Domain.*;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.CategoryNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.InsufficientStockException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.KafkaEventNotSentException;
 import com.wassimlagnaoui.ecommerce.product_service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.CategoryRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.InventoryTransactionRepository;
+import com.wassimlagnaoui.ecommerce.product_service.Repository.ProductOutboxRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Repository.ProductRepository;
 import com.wassimlagnaoui.ecommerce.product_service.Util.Topics;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
@@ -26,8 +26,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -35,16 +37,21 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final ProductOutboxRepository productOutboxRepository;
 
     // add KafkaTemplate
     @Autowired
     private  KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, InventoryTransactionRepository inventoryTransactionRepository) {
+
+    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, InventoryTransactionRepository inventoryTransactionRepository, ProductOutboxRepository productOutboxRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
+        this.productOutboxRepository = productOutboxRepository;
     }
 
 
@@ -299,6 +306,7 @@ public class ProductService {
     }
 
 
+    @Transactional
     public ProductDTO updateProduct(Long id, CreateProductDTO createProductDTO) {
         Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
         // this is called from a patch endpoint so we need to check for null values
@@ -335,7 +343,21 @@ public class ProductService {
                 .build();
 
 
-        kafkaTemplate.send(Topics.TOPIC_PRODUCT_UPDATED, productUpdatedEvent);
+        ProductOutbox productOutbox = new ProductOutbox();
+        productOutbox.setId(UUID.randomUUID());
+        productOutbox.setAggregateId(savedProduct.getId());
+        productOutbox.setEventType(KafkaTopics.PRODUCT_UPDATED);
+        // payload setting using objectMapper
+        try {
+            productOutbox.setPayload(objectMapper.writeValueAsString(productUpdatedEvent));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        productOutbox.setStatus(EventStatus.PENDING);
+        productOutbox.setCreatedAt(LocalDateTime.now());
+        // save the outbox event
+        productOutboxRepository.save(productOutbox);
+
 
 
 

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
 @ControllerAdvice
@@ -56,6 +57,8 @@ public class GlobalExceptionHandler {
 
         HashMap<String, Object> response = new HashMap<>();
         response.put("type", "Validation Error");
+        response.put("Timestamp", LocalDateTime.now().toString());
+        response.put("Suggestion", "Please correct the input data and try again.");
         response.put("errors", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
