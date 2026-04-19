@@ -30,7 +30,7 @@ public class OrderEventHandler {
     private final OrderItemRepository orderItemRepository;
 
     @Autowired
-    private KafkaPublisher kafkaPublisher;
+    private OrderKafkaPublisher kafkaPublisher;
 
     public OrderEventHandler(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
         this.orderRepository = orderRepository;
