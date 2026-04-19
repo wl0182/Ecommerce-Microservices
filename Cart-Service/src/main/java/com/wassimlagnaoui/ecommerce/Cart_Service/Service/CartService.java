@@ -227,11 +227,11 @@ public class CartService {
             OrderItemRequest orderItem = new OrderItemRequest();
             orderItem.setProductId(cartItem.getProductId());
             orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setPrice(cartItem.getPrice());
             orderItems.add(orderItem);
         }
 
         CreateOrderDTO createOrderDTO = new CreateOrderDTO();
-        createOrderDTO.setUserId(userId);
         createOrderDTO.setItems(orderItems);
        // Input Validation for checkoutRequest fields,
         if (checkoutRequest == null || checkoutRequest.getPaymentMethod() == null ) {
@@ -254,7 +254,9 @@ public class CartService {
             throw new OrderServiceDownException("Order Service is currently unavailable. Please try again later.");
         }
         // Clear cart after successful order creation
-        clearCart(userId);
+        cart.getCartItems().clear();
+        log.info("Cleared cart for user ID: " + userId + " after successful order creation with Order ID: " + orderCreatedResponse.getId());
+        cart.setUpdatedAt(LocalDateTime.now());
         // Return checkout response
         CheckoutResponse checkoutResponse = new CheckoutResponse();
         checkoutResponse.setOrderId(orderCreatedResponse.getId());
@@ -269,6 +271,7 @@ public class CartService {
 
 
 
+    @Transactional
     public void cleanupOldCarts() {
         LocalDateTime cutoffTime = LocalDateTime.now().minusHours(1);
         List<Cart> oldCarts = cartRepository.findByUpdatedAtBefore(cutoffTime);
