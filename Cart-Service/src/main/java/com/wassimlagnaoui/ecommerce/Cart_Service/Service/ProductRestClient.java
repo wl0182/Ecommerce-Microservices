@@ -39,10 +39,15 @@ public class ProductRestClient {
         ProductDTO product = restClient.get()
                 .uri(url)
                 .retrieve()
+                .onStatus(httpStatusCode -> httpStatusCode.equals(404) , (request, response)-> {
+                    // handle 404 error
+                    log.error("Product with id {} not found: {}", productId, response.getStatusCode());
+                    throw new ProductNotFoundException("Product not found with id: " + productId);
+                }) // handle 404 errors
                 .onStatus(HttpStatusCode::is4xxClientError, (request,response) -> {
                     // handle 4xx errors
                     log.error("Client error when fetching product with id {}: {}", productId, response.getStatusCode());
-                    throw new ProductNotFoundException("Product not found with id: " + productId);
+                    throw new ProductNotFoundException("Product Service 400 response " + productId);
                 }).onStatus(HttpStatusCode::is5xxServerError, (request,response) -> {
                     // handle 5xx errors
                     log.error("Server error when fetching product with id {}: {}", productId, response.getStatusCode());
