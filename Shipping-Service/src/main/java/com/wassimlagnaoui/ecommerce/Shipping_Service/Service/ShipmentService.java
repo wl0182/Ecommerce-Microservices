@@ -72,6 +72,7 @@ public class ShipmentService {
 
         return ShipmentDTO.builder()
                 .orderId(shipment.getOrderId())
+                .shipmentId(shipment.getId())
                 .carrier(shipment.getCarrier())
                 .trackingNumber(shipment.getTrackingNumber())
                 .status(shipment.getStatus().name())
@@ -136,13 +137,13 @@ public class ShipmentService {
         shipment.setCarrier("DHL"); // for example
         shipment.setTrackingNumber("TRACK" + orderPaidEvent.getOrderId() + System.currentTimeMillis());
         shipment.setStatus(ShipmentStatus.CREATED);
-        shipment.setEstimatedDelivery(LocalDateTime.now().plusDays(5).toString());
+        shipment.setEstimatedDelivery(LocalDateTime.now().plusDays(5).toString()); // for example, estimated delivery in 5 days
         shipment.setCreatedAt(LocalDateTime.now().toString());
 
         Shipment savedShipment = shipmentRepository.save(shipment);
 
         return ShipmentDTO.builder()
-                .ShipmentId(savedShipment.getId())
+                .shipmentId(savedShipment.getId())
                 .orderId(shipment.getOrderId())
                 .carrier(shipment.getCarrier())
                 .trackingNumber(shipment.getTrackingNumber())
@@ -189,7 +190,7 @@ public class ShipmentService {
 
         // return ShipmentDTO
         return ShipmentDTO.builder()
-                .ShipmentId(shipment.getId())
+                .shipmentId(shipment.getId())
                 .orderId(shipment.getOrderId())
                 .carrier(shipment.getCarrier())
                 .trackingNumber(shipment.getTrackingNumber())
