@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 public class ShipRequest {
     @NotNull(message = "Order ID cannot be null")
     private Long orderId;
-    @NotBlank(message = "User ID cannot be blank")
+    @NotNull(message = "User ID cannot be null")
     private Long userId;
-    @NotBlank(message = "Address ID cannot be blank")
+    @NotNull(message = "Address ID cannot be null")
     private Long addressId;
 
 }// { orderId, userId, addressId }
