@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
@@ -15,7 +16,7 @@ public class PaymentProcessed {
     private String paymentId;
     private Long orderId;
     private String userId;
-    private double amount;
+    private BigDecimal amount;
     private String status;
     private String paymentMethod;
     private Instant createdAt;

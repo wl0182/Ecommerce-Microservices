@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -16,7 +17,7 @@ import java.util.List;
 public class OrderCreateEvent extends BaseEvent {
     private String orderId;
     private String userId;
-    private double totalAmount;
+    private BigDecimal totalAmount;
     private String paymentMethod;
     private List<Item> items;
     private String createdAt;
@@ -28,7 +29,7 @@ public class OrderCreateEvent extends BaseEvent {
     public static class Item { // Nested class to represent order items
         private String productId;
         private int quantity;
-        private double price;
+        private BigDecimal price;
     }
 
 } // { orderId, userId, totalAmount, paymentMethod, items:[{ productId, quantity, price }], createdAt }
