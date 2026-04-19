@@ -1,18 +1,17 @@
 package com.wassimlagnaoui.ecommerce.order_service.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
 import com.wassimlagnaoui.common_events.KafkaTopics;
 import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
-import com.wassimlagnaoui.ecommerce.order_service.Entities.Order;
-import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderItem;
-import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderStatus;
-import com.wassimlagnaoui.ecommerce.order_service.Entities.PaymentMethod;
+import com.wassimlagnaoui.ecommerce.order_service.Entities.*;
 import com.wassimlagnaoui.ecommerce.order_service.Exception.AddressUnavailable;
 import com.wassimlagnaoui.ecommerce.order_service.Exception.OrderItemsListEmpty;
 import com.wassimlagnaoui.ecommerce.order_service.Exception.OrderNotFound;
 import com.wassimlagnaoui.ecommerce.order_service.Exception.UserServiceError;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderItemRepository;
+import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderOutboxRepository;
 import com.wassimlagnaoui.ecommerce.order_service.Repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.persistence.Convert;
@@ -43,25 +42,32 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderOutboxRepository orderOutboxRepository;
 
     private final UserRestClient userRestClient;
 
 
     @Autowired
-    private KafkaPublisher kafkaPublisher;
+    private ObjectMapper objectMapper;
+
+
+    @Autowired
+    private OrderKafkaPublisher kafkaPublisher;
 
     private final ProductRestClient productRestClient;
 
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, UserRestClient userRestClient, ProductRestClient productRestClient) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderOutboxRepository orderOutboxRepository, UserRestClient userRestClient, ProductRestClient productRestClient) {
         this.orderItemRepository = orderItemRepository;
         this.orderRepository = orderRepository;
+        this.orderOutboxRepository = orderOutboxRepository;
         this.userRestClient = userRestClient;
 
         this.productRestClient = productRestClient;
     }
 
     @Transactional
+    @Deprecated
     public OrderCreatedResponse createOrder(Long userId, CreateOrderDTO createOrderDTO){
         Order order = new Order();
         List<OrderItem> orderItems = new ArrayList<>();
@@ -185,15 +191,26 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
         Order savedOrder = orderRepository.save(order);
 
-        // Publish OrderCreateEvent to Kafka
+        //OrderCreateEvent to Kafka
         OrderCreateEvent orderCreateEvent = createOrderEvent(savedOrder, createOrderDTO.getPaymentMethod());
         // Publish the event after committing the transaction
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                kafkaPublisher.publish(KafkaTopics.ORDER_CREATED, orderCreateEvent);
-            }
-        });
+        OrderOutbox orderOutbox = new OrderOutbox();
+        orderOutbox.setId(UUID.randomUUID());
+        orderOutbox.setAggregateId(order.getId());
+        orderOutbox.setEventType(KafkaTopics.ORDER_CREATED);
+        // set payload
+        try {
+            String payload = objectMapper.writeValueAsString(orderCreateEvent);
+            orderOutbox.setPayload(payload);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("JSON Processing Exception Occured");
+        }
+        orderOutbox.setStatus(EventStatus.PENDING);
+
+        orderOutboxRepository.save(orderOutbox);
+
+
+
 
         return OrderCreatedResponse.builder()
                 .id(savedOrder.getId())
