@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
     }
 
-    // handle MehtodArgumentNotValidException for validation errors
+    // handle MethodArgumentNotValidException for validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<HashMap<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         HashMap<String, Object> response = new HashMap<>();
