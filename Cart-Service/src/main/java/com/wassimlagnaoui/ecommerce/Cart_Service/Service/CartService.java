@@ -148,7 +148,7 @@ public class CartService {
         if (inventoryDTO.getStockInventory()<newQuantity){
             throw new QuantityUnavailable("Requested quantity of product with ID: " + addItemRequest.getProductId() + " is not available in stock. Available stock: " + inventoryDTO.getStockInventory());
         }
-        BigDecimal totalPrice = productDTO.getPrice().multiply(BigDecimal.valueOf(newQuantity));
+        BigDecimal totalPrice = productDTO.getPrice();
         // 7. Update CartItem with new quantity and price
         cartItem.setQuantity(newQuantity);
         cartItem.setPrice(totalPrice);
@@ -213,6 +213,7 @@ public class CartService {
 
 
     // Checkout cart
+    @Transactional
     public CheckoutResponse checkoutCart(Long userId, CheckoutRequest checkoutRequest) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartNotFoundException("Cart not found for user ID: " + userId));
@@ -250,8 +251,8 @@ public class CartService {
         // Call order service to create order
         OrderCreatedResponse orderCreatedResponse = orderRestClient.placeOrder(userId, createOrderDTO);
         // If order creation failed, throw exception
-        if (orderCreatedResponse == null || "FAILED".equals(orderCreatedResponse.getStatus())) {
-            throw new OrderServiceDownException("Order Service is currently unavailable. Please try again later.");
+        if (orderCreatedResponse == null ) {
+            throw new OrderServiceDownException("Order Service Response is null, failed to place order for user ID: " + userId);
         }
         // Clear cart after successful order creation
         cart.getCartItems().clear();

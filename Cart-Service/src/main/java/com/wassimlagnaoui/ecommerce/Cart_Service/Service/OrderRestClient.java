@@ -30,7 +30,7 @@ public class OrderRestClient {
     }
 
     // method to call /place-order endpoint of Order Service
-    @Retry(name = "orderServiceRetry")
+
     @CircuitBreaker(name = "orderServiceCircuitBreaker", fallbackMethod = "placeOrderFallback")
     public OrderCreatedResponse placeOrder(Long userId,CreateOrderDTO createOrderDTO) {
         // Call the Order Service's /place-order endpoint using RestClient
@@ -40,7 +40,7 @@ public class OrderRestClient {
             throw new RuntimeException("Failed to place order: " + response.getStatusCode());
         }).onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
             log.error("Server error when placing order for user {}: {}", userId, response.getStatusCode());
-            throw new OrderServiceDownException("Order Service is currently unavailable");
+            throw new OrderServiceDownException("Server error when placing order for user");
         }).body(OrderCreatedResponse.class);
 
         return orderCreatedResponse;

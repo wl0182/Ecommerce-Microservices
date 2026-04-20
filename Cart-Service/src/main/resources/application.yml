@@ -86,13 +86,16 @@ resilience4j:
             waitDurationInOpenState: 10000
             permittedNumberOfCallsInHalfOpenState: 3
             minimumNumberOfCalls: 5
-  retry:
-    instances:
-        productServiceRetry:
-            max-attempts: 3
-            wait-duration: 2000 # Time to wait between retry attempts (in milliseconds)
-        orderServiceRetry:
-            max-attempts: 3
-            wait-duration: 2000
+            slow-call-duration-threshold:
+              seconds: 3 # Time threshold for considering a call as slow (in seconds)
+            slow-call-rate-threshold: 50 # Percentage of slow calls to open the circuit
+#  retry:
+#    instances:
+#        productServiceRetry:
+#            max-attempts: 3
+#            wait-duration: 2000 # Time to wait between retry attempts (in milliseconds)
+#        orderServiceRetry:
+#            max-attempts: 3
+#            wait-duration: 2000
 
 
