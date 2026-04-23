@@ -12,8 +12,8 @@ import java.util.HashMap;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CartNotFoundException.class)
-    public ResponseEntity<HashMap<String,String>> handleCartNotFoundException(CartNotFoundException ex) {
-        HashMap<String,String> errorResponse = new HashMap<>();
+    public ResponseEntity<HashMap<String, String>> handleCartNotFoundException(CartNotFoundException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", "404");
         errorResponse.put("message", "Cart not found");
@@ -22,8 +22,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<HashMap<String,String>> handleProductNotFoundException(ProductNotFoundException ex) {
-        HashMap<String,String> errorResponse = new HashMap<>();
+    public ResponseEntity<HashMap<String, String>> handleProductNotFoundException(ProductNotFoundException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", "404");
         errorResponse.put("message", "Product not found from Product Service");
@@ -33,8 +33,8 @@ public class GlobalExceptionHandler {
 
     // handle kafka publisher exception
     @ExceptionHandler(KafkaPublisherException.class)
-    public  ResponseEntity<HashMap<String,String>>handleKafkaPublisherException(KafkaPublisherException ex) {
-        HashMap<String,String> errorResponse = new HashMap<>();
+    public ResponseEntity<HashMap<String, String>> handleKafkaPublisherException(KafkaPublisherException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", "500");
         errorResponse.put("message", "Failed to publish event to Kafka");
@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
 
     // handle order service down exception
     @ExceptionHandler(OrderServiceDownException.class)
-    public  ResponseEntity<HashMap<String,String>>handleOrderServiceDownException(OrderServiceDownException ex) {
+    public ResponseEntity<HashMap<String, String>> handleOrderServiceDownException(OrderServiceDownException ex) {
         HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
 
     // handle product list empty exception
     @ExceptionHandler(ProductListEmptyException.class)
-    public  ResponseEntity<HashMap<String,String>>handleProductListEmptyException(ProductListEmptyException ex) {
+    public ResponseEntity<HashMap<String, String>> handleProductListEmptyException(ProductListEmptyException ex) {
         HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", HttpStatus.NOT_FOUND.toString());
@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
 
     // handle product service unavailable exception
     @ExceptionHandler(ProductServiceUnavailble.class)
-    public  ResponseEntity<HashMap<String,String>>handleProductServiceUnavailble(ProductServiceUnavailble ex) {
+    public ResponseEntity<HashMap<String, String>> handleProductServiceUnavailble(ProductServiceUnavailble ex) {
         HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", HttpStatus.SERVICE_UNAVAILABLE.toString());
@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
 
     // handle quantity unavailable exception
     @ExceptionHandler(QuantityUnavailable.class)
-    public  ResponseEntity<HashMap<String,String>>handleQuantityUnavailable(QuantityUnavailable ex) {
+    public ResponseEntity<HashMap<String, String>> handleQuantityUnavailable(QuantityUnavailable ex) {
         HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", HttpStatus.BAD_REQUEST.toString());
@@ -89,7 +89,7 @@ public class GlobalExceptionHandler {
 
     // handle IllegalArgumentException
     @ExceptionHandler(IllegalArgumentException.class)
-    public  ResponseEntity<HashMap<String,String>>handleIllegalArgumentException(IllegalArgumentException ex) {
+    public ResponseEntity<HashMap<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
         HashMap<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         errorResponse.put("status", HttpStatus.BAD_REQUEST.toString());
@@ -113,6 +113,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    // handle invalid address
+    @ExceptionHandler(InvalidAddress.class)
+    public ResponseEntity<HashMap<String, String>> handleInvalidAddress(InvalidAddress ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.toString());
+        errorResponse.put("message", "Invalid shipping address provided");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    // Order service unknown response
+    @ExceptionHandler(OrderServiceUnknownResponse.class)
+    public ResponseEntity<HashMap<String, String>> handleOrderServiceUnknownResponse(OrderServiceUnknownResponse ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.CONFLICT.toString());
+        errorResponse.put("message", "Received an unexpected response from Order Service");
+        errorResponse.put("suggestion", "Please check the Order Service logs for more details and try again.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
 
 
+    }
 }

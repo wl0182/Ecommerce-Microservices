@@ -89,6 +89,9 @@ resilience4j:
             slow-call-duration-threshold:
               seconds: 3 # Time threshold for considering a call as slow (in seconds)
             slow-call-rate-threshold: 50 # Percentage of slow calls to open the circuit
+            ignore-exceptions:
+              - com.wassimlagnaoui.ecommerce.Cart_Service.Exception.InvalidAddress
+              - com.wassimlagnaoui.ecommerce.Cart_Service.Exception.OrderServiceUnknownResponse
 #  retry:
 #    instances:
 #        productServiceRetry:
