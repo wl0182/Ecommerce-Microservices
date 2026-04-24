@@ -104,6 +104,18 @@ public class ProductService {
                 .build();
     }
 
+    public ProductDetails getProductDetailsById(Long id) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        return ProductDetails.builder().id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .categoryName(product.getName())
+                .sku(product.getSku())
+                .stockQuantity(product.getStockQuantity())
+                .build();
+    }
+
     // create product
     public ProductDTO createProduct(CreateProductDTO createProductDTO) {
         Product product = new Product();
