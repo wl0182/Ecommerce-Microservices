@@ -1,5 +1,7 @@
 package com.wassimlagnaoui.ecommerce.Payment_Service.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wassimlagnaoui.common_events.Events.OrderService.OrderCreateEvent;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentFailed;
 import com.wassimlagnaoui.common_events.Events.PaymentService.PaymentProcessed;
@@ -9,11 +11,11 @@ import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.IssueRefundRequest;
 import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.IssueRefundResponse;
 import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.PaymentDTO;
 import com.wassimlagnaoui.ecommerce.Payment_Service.DTO.ProcessPaymentResponse;
-import com.wassimlagnaoui.ecommerce.Payment_Service.Domain.Payment;
-import com.wassimlagnaoui.ecommerce.Payment_Service.Domain.PaymentMethod;
-import com.wassimlagnaoui.ecommerce.Payment_Service.Domain.PaymentStatus;
-import com.wassimlagnaoui.ecommerce.Payment_Service.Domain.Refund;
+import com.wassimlagnaoui.ecommerce.Payment_Service.Domain.*;
 import com.wassimlagnaoui.ecommerce.Payment_Service.Exception.PaymentNotFoundException;
+import com.wassimlagnaoui.ecommerce.Payment_Service.Exception.RefundNotFoundException;
+import com.wassimlagnaoui.ecommerce.Payment_Service.Exception.SerialiazationException;
+import com.wassimlagnaoui.ecommerce.Payment_Service.Repository.PaymentOutboxRepository;
 import com.wassimlagnaoui.ecommerce.Payment_Service.Repository.PaymentRepository;
 import com.wassimlagnaoui.ecommerce.Payment_Service.Repository.RefundRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,22 +24,27 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final RefundRepository refundRepository;
+    private final PaymentOutboxRepository paymentOutboxRepository;
 
     @Autowired
-    private KafkaPublisher kafkaPublisher; // to publish events to Kafka
+    private PaymentKafkaPublisher paymentKafkaPublisher;
 
-    public PaymentService(PaymentRepository paymentRepository, RefundRepository refundRepository) {
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    public PaymentService(PaymentRepository paymentRepository, RefundRepository refundRepository, PaymentOutboxRepository paymentOutboxRepository) {
         this.paymentRepository = paymentRepository;
         this.refundRepository = refundRepository;
+        this.paymentOutboxRepository = paymentOutboxRepository;
     }
 
     // get payment by paymentId
@@ -97,7 +104,24 @@ public class PaymentService {
                 .reason(request.getReason())
                 .build();
 
-        kafkaPublisher.publish(KafkaTopics.PAYMENT_REFUNDED, refundEvent);
+        // update payment status to REFUNDED
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setUpdatedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        // save the refund event to outbox table to ensure reliable event publishing
+        PaymentOutbox paymentOutbox = new PaymentOutbox();
+        paymentOutbox.setId(UUID.randomUUID());
+        paymentOutbox.setAggregateId(payment.getId());
+        paymentOutbox.setEventType(KafkaTopics.PAYMENT_REFUNDED);
+
+        try {
+            paymentOutbox.setPayload(objectMapper.writeValueAsString(refundEvent));
+        } catch (JsonProcessingException e) {
+            throw new SerialiazationException("Failed to serialize refund event to JSON: " + e.getMessage());
+        }
+
+        paymentOutboxRepository.save(paymentOutbox);
 
 
         return IssueRefundResponse.builder()
@@ -133,12 +157,19 @@ public class PaymentService {
         paymentProcessed.setCreatedAt(java.time.Instant.now());
 
 
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                kafkaPublisher.publish(KafkaTopics.PAYMENT_PROCESSED, paymentProcessed);
-            }
-        });
+        // save the payment success event to outbox table to ensure reliable event publishing
+        PaymentOutbox paymentOutbox = new PaymentOutbox();
+        paymentOutbox.setId(UUID.randomUUID());
+        paymentOutbox.setAggregateId(payment.getId());
+        paymentOutbox.setEventType(KafkaTopics.PAYMENT_PROCESSED);
+
+        try {
+            paymentOutbox.setPayload(objectMapper.writeValueAsString(paymentProcessed));
+        } catch (JsonProcessingException e) {
+            throw new SerialiazationException("Failed to serialize payment processed event to JSON: " + e.getMessage());
+        }
+
+        paymentOutboxRepository.save(paymentOutbox);
 
 
 
@@ -172,12 +203,19 @@ public class PaymentService {
         paymentFailed.setFailedAt(java.time.Instant.now());
 
 
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                kafkaPublisher.publish(KafkaTopics.PAYMENT_FAILED, paymentFailed);
-            }
-        }); // register a synchronization callback to publish the event only after the transaction commits successfully
+        // save the payment failed event to outbox table to ensure reliable event publishing
+        PaymentOutbox paymentOutbox = new PaymentOutbox();
+        paymentOutbox.setId(UUID.randomUUID());
+        paymentOutbox.setAggregateId(payment.getId());
+        paymentOutbox.setEventType(KafkaTopics.PAYMENT_FAILED);
+
+        try {
+            paymentOutbox.setPayload(objectMapper.writeValueAsString(paymentFailed));
+        } catch (JsonProcessingException e) {
+            throw new SerialiazationException("Failed to serialize payment failed event to JSON: " + e.getMessage());
+        }
+
+        paymentOutboxRepository.save(paymentOutbox);
 
 
         return ProcessPaymentResponse.builder()
