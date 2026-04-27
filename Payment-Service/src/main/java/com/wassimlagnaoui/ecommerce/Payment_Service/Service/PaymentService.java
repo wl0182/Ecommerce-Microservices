@@ -18,6 +18,7 @@ import com.wassimlagnaoui.ecommerce.Payment_Service.Exception.SerialiazationExce
 import com.wassimlagnaoui.ecommerce.Payment_Service.Repository.PaymentOutboxRepository;
 import com.wassimlagnaoui.ecommerce.Payment_Service.Repository.PaymentRepository;
 import com.wassimlagnaoui.ecommerce.Payment_Service.Repository.RefundRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class PaymentService {
 
@@ -165,11 +167,13 @@ public class PaymentService {
 
         try {
             paymentOutbox.setPayload(objectMapper.writeValueAsString(paymentProcessed));
+            log.info("Serialized payment processed event payload: " + paymentOutbox.getPayload());
         } catch (JsonProcessingException e) {
             throw new SerialiazationException("Failed to serialize payment processed event to JSON: " + e.getMessage());
         }
 
         paymentOutboxRepository.save(paymentOutbox);
+        log.info("Saved payment processed event to outbox with id: " + paymentOutbox.getId());
 
 
 

@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.validator.constraints.UniqueElements;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 
@@ -33,17 +34,19 @@ public class PaymentOutbox {
     @Enumerated(EnumType.STRING)
     private EventStatus status=EventStatus.PENDING;
     @CreationTimestamp
-    private Long createdAt;
+    private LocalDateTime createdAt;
 
 
     // the three field below will be updated when the event is processed (either successfully or with failure)
 
     @Column(name = "processed_at")
-    private Long processedAt;
+    private LocalDateTime processedAt;
     @Column(name = "retry_count")
-    private Integer retryCount;
+    private Integer retryCount=0;
     @Column(name = "error_message")
     private String errorMessage;
+
+
 
 
 }
