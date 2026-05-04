@@ -87,7 +87,6 @@ public class CartService {
 
         for (CartItem cartItem: cartItems){
             CartItemDTO cartItemDTO = new CartItemDTO();
-            cartItemDTO.setId(cartItem.getId());
             cartItemDTO.setCartId(cart.getId());
 
             // product related Data
@@ -112,20 +111,27 @@ public class CartService {
 
     // Add Item to Cart
 
+    @Transactional
     public CartItemDTO addItemToCart(Long userId,AddItemRequest addItemRequest){
-        // 1. Validate Input
-        if (addItemRequest.getQuantity()<=0){
-            throw new IllegalArgumentException("Quantity must be greater than zero");
+       // validate Input
+        if (addItemRequest == null || addItemRequest.getProductId() == null || addItemRequest.getQuantity() == null || addItemRequest.getQuantity() <= 0) {
+            throw new IllegalArgumentException("Invalid input: productId and quantity must be provided and quantity must be greater than 0");
         }
-        // 2. Retrieve Product and Inventory from Product Service
-        ProductDTO productDTO = productRestClient.getProductById(addItemRequest.getProductId());
-        InventoryDTO inventoryDTO = productRestClient.getProductInventoryById(addItemRequest.getProductId());
+        // retrieve product details
+        ProductDetails productDetails = getProductDetailsById(addItemRequest.getProductId());
+        if (productDetails.getId()==null) {
+            throw new ProductNotFoundException("Product not found with ID: " + addItemRequest.getProductId());
+        }
+        if (productDetails.getId().equals(-1L)){
+            throw new ProductServiceUnavailble("Product Service is currently unavailable, failed to retrieve product details for product ID: " + addItemRequest.getProductId());
+        }
 
-        // 3. Validate if the Product or Inventory are null
-        if (productDTO == null|| inventoryDTO == null) {
-            throw new ProductNotFoundException("Product not found with id: " + addItemRequest.getProductId());
+        if (productDetails.getStockQuantity() < addItemRequest.getQuantity()) {
+            throw new QuantityUnavailable("Insufficient stock for product ID: " + addItemRequest.getProductId() + ". Available stock: " + productDetails.getStockQuantity());
         }
-        // 4. Check if Cart Exist for user, otherwise create one
+
+
+        // retrieve Cart by User id or create new Cart
         Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setUserId(userId);
@@ -133,32 +139,35 @@ public class CartService {
             newCart.setUpdatedAt(LocalDateTime.now());
             return cartRepository.save(newCart);
         });
-        // 5. check if CartItem exist for same product and user id, otherwise create one
+
+        // Retrieve existing CartItem and add or create a new one CartItem
         CartItem cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), addItemRequest.getProductId())
-                    .orElseGet(() -> {
-                        CartItem newCartItem = new CartItem();
-                        newCartItem.setCart(cart);
-                        cart.getCartItems().add(newCartItem); // add cart item to cart's cart items list to establish the relationship and ensure it is saved when we save the cart
-                        newCartItem.setProductId(addItemRequest.getProductId());
-                        newCartItem.setQuantity(0); // set initial quantity to 0, we will update it later after validating the total quantity against inventory stock
-                        return newCartItem;
-                    });
-        // 6. Set the Quantity and Validate Quantity again against inventory stock
-        int newQuantity = cartItem.getQuantity() + addItemRequest.getQuantity();
-        if (inventoryDTO.getStockInventory()<newQuantity){
-            throw new QuantityUnavailable("Requested quantity of product with ID: " + addItemRequest.getProductId() + " is not available in stock. Available stock: " + inventoryDTO.getStockInventory());
-        }
-        BigDecimal totalPrice = productDTO.getPrice();
-        // 7. Update CartItem with new quantity and price
-        cartItem.setQuantity(newQuantity);
-        cartItem.setPrice(totalPrice);
-        // 8. Save  Cart and CartItem to Db
+                .orElseGet(() -> {
+                    CartItem newCartItem = new CartItem();
+                    newCartItem.setProductId(addItemRequest.getProductId());
+                    newCartItem.setQuantity(0);
+                    newCartItem.setPrice(productDetails.getPrice());
+                    cart.addCartItem(newCartItem); // add cart item to cart and set cart reference in cart item
+                    return newCartItem;
+                });
+
+        cartItem.setQuantity(cartItem.getQuantity() + addItemRequest.getQuantity());
+
+
+        // Save Cart
         cart.setUpdatedAt(LocalDateTime.now());
-        CartItem savedCartItem = cartItemRepository.save(cartItem);
-        cartRepository.save(cart);
-       // 9. Map CartItem to CartItemDTO and return it
-        return mapToCartItemDTO(savedCartItem, productDTO);
-    } // { id, cartId, productId, productName, quantity, price }
+        cartRepository.save(cart); // no need to save cartItem separately because of cascade and orphanRemoval
+
+
+        // return CartItemDTO with product details and quantity
+        return  CartItemDTO.builder()
+                .cartId(cart.getId())
+                .productId(cartItem.getProductId())
+                .productName(productDetails.getName())
+                .quantity(cartItem.getQuantity())
+                .price(cartItem.getPrice())
+                .build();
+    }
 
     private CartItemDTO mapToCartItemDTO(CartItem cartItem, ProductDTO product) {
         CartItemDTO cartItemDTO = new CartItemDTO();
@@ -167,7 +176,6 @@ public class CartService {
         cartItemDTO.setQuantity(cartItem.getQuantity());
         cartItemDTO.setPrice(product.getPrice());
         cartItemDTO.setCartId(cartItem.getCart().getId());
-        cartItemDTO.setId(cartItem.getId());
         return cartItemDTO;
     }
 
@@ -251,8 +259,12 @@ public class CartService {
         // Call order service to create order
         OrderCreatedResponse orderCreatedResponse = orderRestClient.placeOrder(userId, createOrderDTO);
         // If order creation failed, throw exception
-        if (orderCreatedResponse == null ) {
-            throw new OrderServiceDownException("Order Service Response is null, failed to place order for user ID: " + userId);
+        if (orderCreatedResponse.getId() == null) {
+            throw new InvalidAddress("Invalid address ID: " + checkoutRequest.getAddressId() + " for user ID: " + userId);
+        }
+        if (orderCreatedResponse.getId().equals(-1L)) {
+            log.warn("Order Service circuit breaker is open, failed to place order for user ID: " + userId);
+            throw new OrderServiceDownException("Order Service failed , Circuit breaker is open, failed to place order for user ID: " + userId);
         }
         // Clear cart after successful order creation
         cart.getCartItems().clear();
@@ -286,6 +298,15 @@ public class CartService {
     }
 
 
+    public ProductDetails getProductDetailsById(Long productId){
+        ProductDetails productDetails = productRestClient.getProductDetailsById(productId);
+        log.error("Product Service returned response for product details with id: " + productId + " is: " + productDetails);
+        if (productDetails.getId()==null) {
+            log.warn("Product Service returned null response for product details with id: " + productId);
+            throw new ProductNotFoundException("Product details not found for product ID: " + productId);
+        }
+        return productDetails;
+    }
 
 
 }

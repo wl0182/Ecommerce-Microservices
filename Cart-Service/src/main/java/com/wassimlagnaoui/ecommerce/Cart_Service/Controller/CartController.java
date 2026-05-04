@@ -1,6 +1,7 @@
 package com.wassimlagnaoui.ecommerce.Cart_Service.Controller;
 
 import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.*;
+import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs.ProductDetails;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Service.CartService;
 import jakarta.validation.Valid;
 import org.apache.coyote.Response;
@@ -51,5 +52,11 @@ public class CartController {
 
     }
 
+    // test get Product details from product service
+    @GetMapping("/test/product/{productId}")
+    public ResponseEntity<ProductDetails> getProductDetails(@PathVariable Long productId) {
+        ProductDetails productDetails = cartService.getProductDetailsById(productId);
+        return ResponseEntity.ok(productDetails);
+    }
 
 }

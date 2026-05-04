@@ -28,6 +28,14 @@ public class Cart {
     private List<CartItem> cartItems = new ArrayList<>();
 
 
+    public void addCartItem(CartItem cartItem) {
+        cartItems.add(cartItem);
+        cartItem.setCart(this);
+    }
+
+
+
+
 }
 
 // orphanRemoval = true means that if a CartItem is removed from the cartItems list, it will be deleted from the cart_items table in the database.
