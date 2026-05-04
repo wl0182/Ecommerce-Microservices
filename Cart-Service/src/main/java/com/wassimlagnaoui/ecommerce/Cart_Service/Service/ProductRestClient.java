@@ -2,6 +2,7 @@ package com.wassimlagnaoui.ecommerce.Cart_Service.Service;
 
 import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs.InventoryDTO;
 import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs.ProductDTO;
+import com.wassimlagnaoui.ecommerce.Cart_Service.DTO.RestDTOs.ProductDetails;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductNotFoundException;
 import com.wassimlagnaoui.ecommerce.Cart_Service.Exception.ProductServiceUnavailble;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -42,12 +43,10 @@ public class ProductRestClient {
                 .onStatus(httpStatusCode -> httpStatusCode.equals(404) , (request, response)-> {
                     // handle 404 error
                     log.error("Product with id {} not found: {}", productId, response.getStatusCode());
-                    throw new ProductNotFoundException("Product not found with id: " + productId);
                 }) // handle 404 errors
                 .onStatus(HttpStatusCode::is4xxClientError, (request,response) -> {
                     // handle 4xx errors
                     log.error("Client error when fetching product with id {}: {}", productId, response.getStatusCode());
-                    throw new ProductNotFoundException("Product Service 400 response " + productId);
                 }).onStatus(HttpStatusCode::is5xxServerError, (request,response) -> {
                     // handle 5xx errors
                     log.error("Server error when fetching product with id {}: {}", productId, response.getStatusCode());
@@ -56,6 +55,7 @@ public class ProductRestClient {
                 .body(ProductDTO.class);
         return product;
     }
+
 
     // get bulk Products by ids
     @Retry(name = "productServiceRetry")
@@ -69,7 +69,6 @@ public class ProductRestClient {
                 .onStatus(HttpStatusCode::is4xxClientError,(request, response) -> {
                     // handle client error
                     log.error("Client error when fetching products by ids: {}", productIds);
-                    throw new ProductNotFoundException("Products not found for ids: " + productIds);
                 })
                 .onStatus(HttpStatusCode::is5xxServerError, (request,response) -> {
                     // handle server error
@@ -95,7 +94,6 @@ public class ProductRestClient {
                 .onStatus(HttpStatusCode::is4xxClientError, (request,response) -> {
                     // handle 4xx errors
                     log.error("Client error when fetching inventory for product with id {}: {}", productId, response.getStatusCode());
-                    throw new ProductNotFoundException("Product not found with id: " + productId);
                 }).onStatus(HttpStatusCode::is5xxServerError, (request,response) -> {
                     // handle 5xx errors
                     log.error("Server error when fetching inventory for product with id {}: {}", productId, response.getStatusCode());
@@ -106,6 +104,43 @@ public class ProductRestClient {
         log.info("Inventory for product id {}: {}", productId, inventory);
         return inventory;
     }
+
+    // get Product details by id
+    @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "getProductDetailsByIdFallback")
+    public ProductDetails getProductDetailsById(Long productId){
+        String url = productServiceUrl + "/products/product-details/" + productId;
+        ProductDetails productDetails = restClient.get()
+                .uri(url)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (request,response) -> {
+                    log.error("Client error when fetching product details for product with id {}: {}", productId, response.getStatusCode());
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (request,response) -> {
+                    log.error("Server error when fetching product details for product with id {}: {}", productId, response.getStatusCode());
+                    throw new ProductServiceUnavailble("Product Service is currently unavailable");
+                })
+                .body(ProductDetails.class);
+
+        return productDetails;
+    }
+    public ProductDetails getProductDetailsByIdFallback(Long productId, Throwable ex) {
+        log.warn("Fallback From Circuit Breaker for getProductDetailsById with id {}: {}", productId, ex.getMessage());
+
+        // return null to indicate product details are not available
+
+        return ProductDetails.builder()
+                .id(-1L)
+                .name("Unknown Product")
+                .description("Product information is currently unavailable")
+                .sku("unknown")
+                .categoryName("unknown")
+                .price(BigDecimal.ZERO)
+                .stockQuantity(0)
+                .build();
+    }
+
+
+
 
     // Fallback methods for circuit breaker
     public ProductDTO getProductByIdFallback(Long productId, Throwable ex) {
