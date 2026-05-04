@@ -135,4 +135,14 @@ public class GlobalExceptionHandler {
 
 
     }
+    // handle User not found exception
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<HashMap<String, String>> handleUserNotFoundException(UserNotFoundException ex) {
+        HashMap<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        errorResponse.put("status", HttpStatus.NOT_FOUND.toString());
+        errorResponse.put("message", "User not found from User Service");
+        errorResponse.put("suggestion", "Please check the user ID and try again.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
 }

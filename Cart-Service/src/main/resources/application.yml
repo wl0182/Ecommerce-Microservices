@@ -92,6 +92,15 @@ resilience4j:
             ignore-exceptions:
               - com.wassimlagnaoui.ecommerce.Cart_Service.Exception.InvalidAddress
               - com.wassimlagnaoui.ecommerce.Cart_Service.Exception.OrderServiceUnknownResponse
+
+        userServiceCircuitBreaker:
+            registerHealthIndicator: true
+            sliding-window-type: time_based
+            sliding-window-size: 10
+            failureRateThreshold: 50
+            waitDurationInOpenState: 10000
+            permittedNumberOfCallsInHalfOpenState: 3
+            minimumNumberOfCalls: 5
 #  retry:
 #    instances:
 #        productServiceRetry:
