@@ -43,7 +43,7 @@ public class ProductKafkaPublisher {
 
 
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 3600000)
     public void publishOutboxEvents(){
         List<ProductOutbox> pendingEvents = productOutboxRepository.findUnprocessedEvents();
         for (ProductOutbox event : pendingEvents) {
@@ -55,7 +55,7 @@ public class ProductKafkaPublisher {
                 }
 
                 Object eventObject = objectMapper.readValue(event.getPayload(), eventClass);
-                kafkaTemplate.send(event.getEventType(), eventObject);
+                kafkaTemplate.send(event.getEventType(), eventObject).get();
 
                 log.info("Published event to Kafka: {}", event.getEventType());
                 log.info("Event payload: {}", event.getPayload());
@@ -67,6 +67,7 @@ public class ProductKafkaPublisher {
 
                 event.setStatus(EventStatus.FAILED);
                 event.setErrorMessage(e.getMessage());
+
                 productOutboxRepository.save(event);
             }
         }
