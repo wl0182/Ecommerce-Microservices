@@ -10,13 +10,19 @@ spring:
             - id: user-service
               uri: lb://user-service
               predicates:
-                - Path=/users/**       # matches @RequestMapping("/users")
+                - Path=/users/**
               filters:
                 - StripPrefix=0
             - id: product-service
               uri: lb://product-service
               predicates:
-                - Path=/products/**    # matches @RequestMapping("/products")
+                - Path=/products/**
+              filters:
+                - StripPrefix=0
+            - id: category-service
+              uri: lb://product-service
+              predicates:
+                - Path=/categories/**
               filters:
                 - StripPrefix=0
             - id: cart-service

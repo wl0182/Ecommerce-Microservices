@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 public class UserController {
 
     // Inject UserService
@@ -85,7 +85,7 @@ public class UserController {
         return ResponseEntity.ok(addressDTO);
     }
 
-    // validate address curl command localhost 7001 : GET http://localhost:7001/api/users/1/addresses/1/validate
+    // validate address curl command localhost 7001 : GET http://localhost:7001/users/1/addresses/1/validate
     @GetMapping("/{userId}/addresses/{addressId}/validate")
     public ResponseEntity<Boolean> validateAddress(@PathVariable Long userId, @PathVariable Long addressId) {
         Boolean isValid = userService.validateAddress(userId, addressId);
