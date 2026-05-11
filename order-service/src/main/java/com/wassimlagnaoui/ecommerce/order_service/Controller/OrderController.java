@@ -5,7 +5,6 @@ import com.wassimlagnaoui.ecommerce.order_service.DTO.*;
 import com.wassimlagnaoui.ecommerce.order_service.Entities.OrderStatus;
 import com.wassimlagnaoui.ecommerce.order_service.Service.OrderService;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.PathParam;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +25,7 @@ public class OrderController {
 
     // create new Order
     @PostMapping("/place-order")
-    public ResponseEntity<OrderCreatedResponse> createOrder(@PathParam("userId") Long userId,@Valid @RequestBody CreateOrderDTO createOrderDTO) {
+    public ResponseEntity<OrderCreatedResponse> createOrder(@RequestParam("userId") Long userId,@Valid @RequestBody CreateOrderDTO createOrderDTO) {
         OrderCreatedResponse orderDTO = orderService.placeOrder(userId,createOrderDTO);
         return ResponseEntity.ok(orderDTO);
     }
