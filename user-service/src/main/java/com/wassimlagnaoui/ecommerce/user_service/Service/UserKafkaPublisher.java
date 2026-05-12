@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,7 +29,8 @@ public class UserKafkaPublisher {
         this.objectMapper = objectMapper;
     }
 
-    @Scheduled(fixedDelay = 1000) // Run every 5 seconds
+    @Scheduled(fixedDelay = 120000) // 2 minutes
+    @Transactional
     public void publishEvents() {
         log.info("Publishing UserRegisteredEvent to Kafka...");
         // Fetch pending events from the outbox
@@ -36,12 +38,12 @@ public class UserKafkaPublisher {
 
         for (UserOutboxEvent event : unprocessedEvents) {
             try {
-                kafkaTemplate.send(event.getEventType(), event.getPayload());
+                kafkaTemplate.send(event.getEventType(), event.getPayload()).get(); // Wait for the send to complete
+                log.info("Successfully published event with ID: {} to topic: {}", event.getId(), event.getEventType());
                 // Update event status to PROCESSED
                 event.setStatus(EventStatus.PROCESSED);
                 event.setProcessedAt(LocalDateTime.now());
                 userOutboxRepository.save(event);
-                log.info("Published event with ID: {}", event.getId());
             } catch (Exception e) {
                 log.error("Failed to publish event with ID: {}. Error: {}", event.getId(), e.getMessage());
                 // Update event status to FAILED and increment retry count
@@ -54,4 +56,6 @@ public class UserKafkaPublisher {
 
 
     }
+
+
 }

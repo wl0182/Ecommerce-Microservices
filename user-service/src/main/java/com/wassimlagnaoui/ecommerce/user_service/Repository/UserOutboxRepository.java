@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface UserOutboxRepository extends JpaRepository<UserOutboxEvent, UUID> {
 
-    @Query("SELECT e FROM UserOutboxEvent e WHERE e.status in ('PENDING','FAILED') ")
+    @Query("SELECT e FROM UserOutboxEvent e WHERE e.status in ('PENDING','FAILED') order by e.createdAt DESC limit 100")
     List<UserOutboxEvent> findUnprocessedEvents();
 
 }

@@ -14,6 +14,7 @@ import com.wassimlagnaoui.ecommerce.user_service.Model.User;
 import com.wassimlagnaoui.ecommerce.user_service.Model.UserOutboxEvent;
 import com.wassimlagnaoui.ecommerce.user_service.Repository.UserOutboxRepository;
 import com.wassimlagnaoui.ecommerce.user_service.Repository.UserRepository;
+import com.wassimlagnaoui.ecommerce.user_service.util.JwtUtil;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -35,6 +36,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserOutboxRepository userOutboxRepository;
+    private final JwtUtil jwtUtil;
 
     // inject PasswordEncoder
 
@@ -46,9 +48,10 @@ public class UserService {
 
     private final  KafkaTemplate<String, Object> kafkaTemplate;
 
-    public UserService(UserRepository userRepository, UserOutboxRepository userOutboxRepository, ObjectMapper objectMapper, BCryptPasswordEncoder passwordEncoder, KafkaTemplate<String, Object> kafkaTemplate) {
+    public UserService(UserRepository userRepository, UserOutboxRepository userOutboxRepository, JwtUtil jwtUtil, ObjectMapper objectMapper, BCryptPasswordEncoder passwordEncoder, KafkaTemplate<String, Object> kafkaTemplate) {
         this.userRepository = userRepository;
         this.userOutboxRepository = userOutboxRepository;
+        this.jwtUtil = jwtUtil;
         this.objectMapper = objectMapper;
         this.passwordEncoder = passwordEncoder;
         this.kafkaTemplate = kafkaTemplate;
@@ -108,7 +111,6 @@ public class UserService {
 
         UserRegisteredEvent event = new UserRegisteredEvent();
         event.setEventId(UUID.randomUUID().toString());
-        event.setEventTimestamp(LocalDateTime.now());
         event.setUserId(savedUser.getId().toString());
         event.setEmail("lagnaouiw@gmail.com");
         event.setRegisteredAt(LocalDateTime.now().toString());
@@ -143,8 +145,8 @@ public class UserService {
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UserNotFoundException("User not found with email: " + loginRequest.getEmail()));
 
         if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())){
-            // generate a fake token for demonstration purposes
-            String token = "fake-jwt-token-for-user-" + user.getId();
+
+            String token = jwtUtil.generateToken(user.getId(),user.getEmail());
             return new LoginResponse(token, user.getId(), user.getEmail(), user.getName());
         } else {
             throw new InvalidLoginException("Invalid credentials");
