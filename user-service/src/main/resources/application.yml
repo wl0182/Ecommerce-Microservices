@@ -42,3 +42,10 @@ eureka:
     client:
         service-url:
           defaultZone: http://localhost:8761/eureka/
+
+
+
+
+jwt:
+  secret: wassim-lagnaoui-ecommerce-secret-key-32-char
+  expiration: 86400000
