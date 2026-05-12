@@ -55,6 +55,20 @@ spring:
                 - Path=/notifications/**
               filters:
                 - StripPrefix=0
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:3000"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
 
 server:
   port: 7000
@@ -65,3 +79,9 @@ eureka:
       defaultZone: http://localhost:8761/eureka
     register-with-eureka: true
     fetch-registry: true
+
+
+
+jwt:
+  secret: wassim-lagnaoui-ecommerce-secret-key-32-char
+  expiration: 86400000
